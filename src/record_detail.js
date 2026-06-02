@@ -171,6 +171,9 @@ function updateViewToStep(step) {
         
         let sTargetIdx = Math.min(currentHIndex, sData.length - 1);
         let curScores = sData[sTargetIdx];
+        
+        // 💡 과거에 저장된 객체 래핑 데이터 호환성 처리 ({ scores: [...] } 구조 방어)
+        if (curScores && curScores.scores) curScores = curScores.scores;
 
         let barColor = curLevel > 70 ? '#4caf50' : curLevel > 30 ? '#ffc107' : '#f44336';
         let hpText = `<div style="margin-top: 6px; font-size: 0.75rem; color: #555;">이해도: ${curLevel}%</div>
@@ -200,7 +203,10 @@ function updateViewToStep(step) {
                 ds.data = uData.slice(0, currentHIndex + 1);
             } else {
                 let sData = fullSHistory && fullSHistory[student] ? fullSHistory[student] : [[1,1,1,1,1]];
-                ds.data = sData.slice(0, currentHIndex + 1).map(arr => arr[cfg.idx]);
+                ds.data = sData.slice(0, currentHIndex + 1).map(arr => {
+                    const scores = arr && arr.scores ? arr.scores : arr;
+                    return scores[cfg.idx];
+                });
             }
         });
         chart.update();
