@@ -259,14 +259,9 @@ function renderTable() {
                 `;
             }
         } else {
-            let defaultDesc = "";
-            if (name === "민준") defaultDesc = "기본: 오개념, 고집";
-            if (name === "서연") defaultDesc = "기본: 모범생, 조력자";
-            if (name === "연우") defaultDesc = "기본: 하위권, 의존적";
-            if (name === "교사") defaultDesc = "기본: 대화적 교수법 실천 교사";
             personaTooltip = `
                 <div class="name-tooltip" style="visibility: hidden; opacity: 0; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background-color: #2C3E50; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 11px; white-space: nowrap; transition: opacity 0.2s; pointer-events: none; z-index: 20; margin-bottom: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    [${defaultDesc}]
+                    [기본 페르소나 적용됨]
                 </div>
             `;
         }
