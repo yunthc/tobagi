@@ -74,11 +74,33 @@ function renderDetail(data) {
     if (data.customPersonas && Object.keys(data.customPersonas).length > 0) {
         for (const [name, info] of Object.entries(data.customPersonas)) {
             let details = [];
-            if (info.initialUnderstanding !== null) details.push(`초기 이해도: ${info.initialUnderstanding}%`);
-            if (info.prompt) details.push(`커스텀 프롬프트 적용`);
-            if (details.length > 0) {
-                personaInfo.innerHTML += `<p style="margin: 4px 0;"><strong>[${name}]</strong> ${details.join(' | ')}</p>`;
+            if (info.initialUnderstanding !== null && name !== '교사') {
+                details.push(`<span style="color: #E65100; font-weight: bold;">초기 이해도: ${info.initialUnderstanding}%</span>`);
             }
+            
+            if (info.scores) {
+                const s = info.scores;
+                const sl = { 1: "낮음(아니다)", 2: "보통이다", 3: "높음(그렇다)" };
+                const tl = { 1: "낮음(지시적)", 2: "보통이다", 3: "높음(대화적)" };
+                
+                if (name === "교사") {
+                    details.push(`대화적 교수법: ${tl[s.tq1] || '보통이다'} | 도움 남용자 대응: ${tl[s.tq2] || '보통이다'} | 도움 회피자 대응: ${tl[s.tq3] || '보통이다'}`);
+                } else {
+                    details.push(`흥미: ${sl[s.q1] || '보통이다'} | 학습지향: ${sl[s.q2] || '보통이다'} | 자신감: ${sl[s.q3] || '보통이다'} | 통제력: ${sl[s.q4] || '보통이다'} <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 자원활용: ${sl[s.q5] || '보통이다'} | 수학불안: ${sl[s.q6] || '보통이다'} | 사고유연: ${sl[s.q7] || '보통이다'} | 검산점검: ${sl[s.q8] || '보통이다'}`);
+                }
+            } else if (info.prompt) {
+                details.push(`커스텀 프롬프트 적용됨`);
+            }
+
+            if (details.length > 0) {
+                personaInfo.innerHTML += `<div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #FFCC80; line-height: 1.5;"><strong style="display:inline-block; width: 45px;">[${name}]</strong> <span style="color: #555;">${details.join('<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ')}</span></div>`;
+            }
+        }
+        // 마지막 요소 밑줄 제거
+        if (personaInfo.lastElementChild) {
+            personaInfo.lastElementChild.style.borderBottom = 'none';
+            personaInfo.lastElementChild.style.marginBottom = '0';
+            personaInfo.lastElementChild.style.paddingBottom = '0';
         }
     } else {
         personaInfo.innerHTML = '<p style="margin: 4px 0; color: #7F8C8D;">별도의 커스텀 설정 없이 기본 페르소나로 진행되었습니다.</p>';

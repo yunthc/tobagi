@@ -310,7 +310,7 @@ function renderTable() {
                         ${levelTitle}
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; line-height: 1;">
-                        <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: bold;">이해도</span>
+                        <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: bold;"></span>
                         ${deltaHtml}
                     </div>
                     <div style="width: 100%; height: 6px; background: ${bgColor}; border-radius: 3px; overflow: hidden;">
@@ -659,11 +659,11 @@ async function trackCompetencies(targetSpeaker) {
                         if (Math.abs(delta) > 30) {
                             // LLM이 변화량 대신 절대 점수를 반환한 경우 (차이값 계산)
                             let diff = delta - understandingLevels[name];
-                            if (diff < 0) diff = diff / 5; // 하락폭은 1/5로 축소
+                            if (diff < 0) diff = diff / 4; // 하락폭은 1/4로 축소
                             understandingLevels[name] = Math.max(0, Math.min(100, Math.round(understandingLevels[name] + diff)));
                         } else {
-                            // 💡 상승/하락 비율 4:1 적용 (음수일 경우 하락폭을 1/5로 줄임)
-                            if (delta < 0) delta = delta / 5;
+                            // 💡 상승/하락 비율 4:1 적용 (음수일 경우 하락폭을 1/4로 줄임)
+                            if (delta < 0) delta = delta / 4; // 하락폭은 1/4로 축소
                             const newLevel = understandingLevels[name] + delta;
                             understandingLevels[name] = Math.max(0, Math.min(100, Math.round(newLevel)));
                         }
