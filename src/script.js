@@ -42,6 +42,47 @@ const PROBLEM_DB = {
         teacherHint: "교사가 먼저 'A는 1/2이고 B, C는 1/4이야'라고 정답을 알려주지 말고, 'A로 가는 길과 B, C로 가는 길은 갈림길을 몇 번 거칠까요?'와 같이 수형도를 떠올릴 수 있는 힌트를 통해 스스로 발견하게 유도하세요.",
         uiHtml: `
             <p><strong>[문제 상황]</strong> 입구 P에서 공을 떨어뜨렸을 때 갈림길을 거쳐 A, B, C에 도착하는 장치</p>
+            <div style="text-align: center; margin: 15px 0;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 320" width="100%" height="100%" style="max-width: 350px;">
+                  <style>
+                    .pipe-border {
+                      stroke: #86a8d0;
+                      stroke-width: 24px;
+                      fill: none;
+                      stroke-linejoin: miter;
+                      stroke-linecap: butt;
+                    }
+                    .pipe-fill {
+                      stroke: #e2edf8;
+                      stroke-width: 18px;
+                      fill: none;
+                      stroke-linejoin: miter;
+                      stroke-linecap: butt;
+                    }
+                    .label {
+                      font-family: 'Times New Roman', Times, serif;
+                      font-size: 26px;
+                      fill: #555555;
+                      text-anchor: middle;
+                    }
+                  </style>
+                  <clipPath id="pipe-clip">
+                     <rect x="0" y="40" width="500" height="230" />
+                  </clipPath>
+                  <g clip-path="url(#pipe-clip)">
+                    <path class="pipe-border" d="M 200 30 L 200 90" />
+                    <path class="pipe-border" d="M 330 180 L 230 290" />
+                    <path class="pipe-border" d="M 70 290 L 70 160 L 200 80 L 330 160 L 330 190 L 430 290" />
+                    <path class="pipe-fill" d="M 200 30 L 200 90" />
+                    <path class="pipe-fill" d="M 330 180 L 230 290" />
+                    <path class="pipe-fill" d="M 70 290 L 70 160 L 200 80 L 330 160 L 330 190 L 430 290" />
+                  </g>
+                  <text x="200" y="30" class="label">P</text>
+                  <text x="70" y="305" class="label">A</text>
+                  <text x="230" y="305" class="label">B</text>
+                  <text x="430" y="305" class="label">C</text>
+                </svg>
+            </div>
             <p>- 첫 번째 갈림길: 왼쪽(A 도착), 오른쪽(두 번째 갈림길로)</p>
             <p>- 두 번째 갈림길: 왼쪽(B 도착), 오른쪽(C 도착)</p>
             <p><strong>[과제 1]</strong> A, B, C에 도착할 확률이 모두 같은지 토론하기</p>
@@ -137,9 +178,9 @@ function getSystemPrompt(roleName) {
         prompt = `당신의 이름은 '교사'이며, 중학교 1학년 수학 교사로서 모둠 방 대화에 참여하고 있습니다. 당신은 '대화적 교수법(Dialogic Teaching)'을 실천하는 교사입니다. 학생들(${ACTIVE_STUDENTS.join(", ")})의 대화가 정체되거나, 현재 수행중인 과제를 해결했다고 판단될 때 자연스럽게 개입하세요. 반말이 아닌 친절하고 부드러운 존댓말(예: ~해요, ~할까요?)을 1~2문장으로 짧게 사용하세요.\n\n${TEACHER_PROMPT_BASE}\n\n다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨운영 지침: 당신은 과제 진행자입니다. 과제1부터 과제${currentTask.goals.length}까지 한 번에 하나씩 순차적으로 제시하세요. 학생들이 현재 과제의 핵심 정답을 어느 정도 도출하고 합의했다면, 불필요하게 모든 숫자를 검산시키거나 완벽한 증명을 요구하지 말고 즉시 칭찬하며 다음 과제로 자연스럽게 넘어가세요. 만약 과제${currentTask.goals.length}까지 모두 성공적으로 완료되었다면 반드시 "오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 대화를 마무리하세요. 또한, 교사가 먼저 정답을 알려주지 말고 다음과 같이 유도하세요. ${currentTask.teacherHint}]\n`;
     } else {
         prompt = `당신의 이름은 '${roleName}'이며, 중학교 1학년 학생으로서 수학 모둠 방 대화에 참여하고 있습니다. 완벽한 AI 티를 내지 말고, 무조건 1~2문장의 짧은 구어체 반말(예: ㅋㅋ, 응 맞아, 아 몰라)을 쓰세요. 다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨학생 지침: 교사나 시스템이 제시한 '현재 진행 중인 과제'에만 집중하세요. 스포일러는 금지입니다. ★가장 중요한 규칙: 절대 친구의 말을 앵무새처럼 반복하거나 "해보자", "맞아"라고 동의만 하며 턴을 낭비하지 마세요. 발화 시 반드시 본인이 직접 구체적인 숫자를 계산해서 말하거나, 새로운 아이디어를 던져서 대화를 무조건 한 단계 진전시키세요.]\n`;
-        if (roleName === "민준") prompt += "당신은 수학을 좋아하지만 가끔 오개념에 빠지는 학생입니다. 정답을 먼저 말하지 말고 헤매는 모습을 보이며, 처음엔 틀린 논리를 고집하다가도 친구들의 설명에 설득당하면 금방 인정합니다.";
-        if (roleName === "서연") prompt += "당신은 모둠을 이끄는 적극적이고 다정한 모범생입니다. 혼자 정답을 다 말해버리기보다는, 친구들(특히 연우와 민준)이 스스로 깨달을 수 있도록 힌트와 좋은 질문을 던지며 부드럽게 이끌어주세요.";
-        if (roleName === "연우") prompt += "당신은 수학을 어려워하여 엉뚱한 소리나 힌트 요구를 자주 하는 학생입니다. 정답을 먼저 말하지 말고 크게 헤매는 모습을 보이며, 친구들이 친절하게 알려주면 금방 깨닫고 기뻐하며 참여합니다.";
+        if (roleName === "민준") prompt ;
+        if (roleName === "서연") prompt ;
+        if (roleName === "연우") prompt ;
     }
     
     // 2. 커스텀 설정이 있다면 기본 설정 위에 덧붙이기
@@ -152,8 +193,8 @@ function getSystemPrompt(roleName) {
     if (roleName !== "교사" && understandingLevels[roleName] !== undefined) {
         const level = understandingLevels[roleName];
         prompt += `\n[중요 상태: 현재 당신의 '개념 이해도'는 ${level}/100 입니다. 
-        0~30이면 자신의 오개념을 고집하거나 과제에 집중하지 못하는 모습을 보이세요. 
-        30~70이면 혼란스러워하며 친구들의 힌트에 귀를 기울이고, "아 혹시 ~라는 뜻이야?"라며 적극적으로 질문하세요. 
+        0~30이면 문제에 접근하는 아이디어 자체를 떠올리지 못하거나, 자신의 오개념을 고집하고, 또는 과제에 집중하지 못하는 모습을 보이세요. 
+        30~70이면 혼란스러워하며, 문제에 접근 하기는 하지만 나사빠진 접근을 보여주세요. 또한 "아 혹시 ~라는 뜻이야?"라며 적극적으로 질문하세요. 
         70~100이면 과제를 완벽히 이해하여 정답을 깨닫고, 아직 모르는 친구를 친절하고 논리적으로 도와주세요.]\n`;
     }
     return prompt;
