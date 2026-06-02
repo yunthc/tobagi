@@ -659,11 +659,11 @@ async function trackCompetencies(targetSpeaker) {
                         if (Math.abs(delta) > 30) {
                             // LLM이 변화량 대신 절대 점수를 반환한 경우 (차이값 계산)
                             let diff = delta - understandingLevels[name];
-                            if (diff < 0) diff = diff / 3; // 하락폭은 1/3로 축소
+                            if (diff < 0) diff = diff / 5; // 하락폭은 1/5로 축소
                             understandingLevels[name] = Math.max(0, Math.min(100, Math.round(understandingLevels[name] + diff)));
                         } else {
-                            // 💡 상승/하락 비율 4:1 적용 (음수일 경우 하락폭을 1/3로 줄임)
-                            if (delta < 0) delta = delta / 3;
+                            // 💡 상승/하락 비율 4:1 적용 (음수일 경우 하락폭을 1/5로 줄임)
+                            if (delta < 0) delta = delta / 5;
                             const newLevel = understandingLevels[name] + delta;
                             understandingLevels[name] = Math.max(0, Math.min(100, Math.round(newLevel)));
                         }
