@@ -214,7 +214,7 @@ function getSystemPrompt(roleName) {
     if (roleName !== "교사" && understandingLevels[roleName] !== undefined) {
         const level = understandingLevels[roleName];
         prompt += `\n[중요 상태: 현재 당신의 '개념 이해도'는 ${level}/100 입니다. 
-        0~30이면 문제에 접근하는 아이디어 자체를 떠올리지 못하거나, 자신의 오개념을 고집하고, 또는 과제에 집중하지 못하는 모습을 보이세요. 
+        0~30이면 문제에 접근하는 아이디어 자체를 떠올리지 못하거나, 자신의 오개념을 고집하고, 친구들의 설명도 이해하지 못하는 상태입니다. 
         30~70이면 혼란스러워하며, 문제에 접근 하기는 하지만 나사빠진 접근을 보여주세요. 또한 "아 혹시 ~라는 뜻이야?"라며 적극적으로 질문하세요. 
         70~100이면 과제를 완벽히 이해하여 정답을 깨닫고, 아직 모르는 친구를 친절하고 논리적으로 도와주세요.]\n`;
     }
@@ -653,6 +653,18 @@ async function callOllama(roleName) {
     const typingId = showTypingIndicator(roleName);
     
     let taskPrompt = `위 Context(대화 내역)의 마지막 발화를 꼼꼼히 읽고, 그에 대한 자연스러운 리액션으로 시작하되, 단순한 동의나 반복을 피하고 **반드시 구체적인 수학적 행동(계산 시도, 숫자 언급, 반례 제시 등)을 포함하여** '${roleName}'의 다음 톡을 1~2문장으로 작성해줘. 혼자 과제 진도를 빼거나 뜬금없는 소리를 하지 말고, 직전 대화의 맥락을 이어가며 문제를 해결하세요.`;
+
+    // 💡 강제 오답 발화 로직: 이해도에 반비례하는 확률로 작동
+    if (roleName !== "교사") {
+        const level = understandingLevels[roleName];
+        if (level !== undefined) {
+            const errorProb = (100 - level) / 100;
+            if (Math.random() < errorProb) {
+                taskPrompt += `\n\n[🚨강제 지시: 현재 당신은 잘못된 수학적 개념을 가지고 있습니다. **반드시 구체적이고 치명적인 수학적 오류(잘못된 계산, 오개념, 엉뚱한 규칙 적용 등)를 저지르는 발화를 하십시오.** 절대 정답을 말해서는 안 됩니다!]`;
+                console.log(`😈 [System] '${roleName}' 강제 오답 발화 트리거 발동! (이해도: ${level}%, 발동확률: ${errorProb * 100}%)`);
+            }
+        }
+    }
 
     // 💡 교사 에이전트가 발화 의도나 행동 지침을 함께 출력하는 환각 현상 방지
     if (roleName === "교사") {
