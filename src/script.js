@@ -658,7 +658,8 @@ async function callOllama(roleName) {
     if (roleName !== "교사") {
         const level = understandingLevels[roleName];
         if (level !== undefined) {
-            const errorProb = (100 - level) / 200;
+            // 💡 오답 발동 확률 최대 80%로 제한
+            const errorProb = Math.min(0.8, (100 - level) / 100);
             if (Math.random() < errorProb) {
                 taskPrompt += `\n\n[🚨강제 지시: 현재 당신은 잘못된 수학적 개념을 가지고 있습니다. **반드시 구체적이고 치명적인 수학적 오류(잘못된 계산, 오개념, 엉뚱한 규칙 적용 등)를 저지르는 발화를 하십시오.** 절대 정답을 말해서는 안 됩니다!]`;
                 console.log(`😈 [System] '${roleName}' 강제 오답 발화 트리거 발동! (이해도: ${level}%, 발동확률: ${errorProb * 100}%)`);
