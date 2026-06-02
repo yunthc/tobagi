@@ -18,6 +18,20 @@ try {
     console.error("Firebase 초기화 실패:", e);
 }
 
+// 변화량 애니메이션 스타일 주입
+const animStyle = document.createElement('style');
+animStyle.innerHTML = `
+@keyframes popUp {
+    0% { transform: translateY(4px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes popDown {
+    0% { transform: translateY(-4px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+`;
+document.head.appendChild(animStyle);
+
 // 상태 관리를 위한 전역 변수
 let currentStep = 0;
 let totalSteps = 0;
@@ -185,22 +199,51 @@ function updateViewToStep(step) {
         let sTargetIdx = Math.min(currentHIndex, sData.length - 1);
         let curScores = sData[sTargetIdx];
         
+        let prevLevel = targetIdx > 0 ? uData[targetIdx - 1] : curLevel;
+        let diff = curLevel - prevLevel;
+        let deltaHtml = '<span style="color: transparent; font-size: 0.75rem;">-</span>';
+        if (diff > 0) {
+            deltaHtml = `<span style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; animation: popUp 0.5s ease-out;">⬆${diff}</span>`;
+        } else if (diff < 0) {
+            deltaHtml = `<span style="color: #F44336; font-size: 0.75rem; font-weight: bold; animation: popDown 0.5s ease-out;">⬇${Math.abs(diff)}</span>`;
+        }
+
         // 💡 과거에 저장된 객체 래핑 데이터 호환성 처리 ({ scores: [...] } 구조 방어)
         if (curScores && curScores.scores) curScores = curScores.scores;
+        
+        let prevTargetIdx = sTargetIdx > 0 ? sTargetIdx - 1 : sTargetIdx;
+        let prevScores = sData[prevTargetIdx];
+        if (prevScores && prevScores.scores) prevScores = prevScores.scores;
+
+        let sDeltaHtmls = Array(5).fill('<div style="color: transparent; font-size: 0.75rem; line-height: 1; margin-top: 2px;">-</div>');
+        if (sTargetIdx > 0 && curScores && prevScores) {
+            for (let i = 0; i < 5; i++) {
+                const diffStr = (curScores[i] - prevScores[i]).toFixed(1);
+                const diffVal = parseFloat(diffStr);
+                if (diffVal > 0) {
+                    sDeltaHtmls[i] = `<div style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popUp 0.5s ease-out;">⬆${diffStr}</div>`;
+                } else if (diffVal < 0) {
+                    sDeltaHtmls[i] = `<div style="color: #F44336; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popDown 0.5s ease-out;">⬇${Math.abs(diffVal).toFixed(1)}</div>`;
+                }
+            }
+        }
 
         let barColor = curLevel > 70 ? '#4caf50' : curLevel > 30 ? '#ffc107' : '#f44336';
-        let hpText = `<div style="margin-top: 6px; font-size: 0.75rem; color: #555;">이해도: ${curLevel}%</div>
-                  <div style="width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-top: 2px;">
-                      <div style="width: ${curLevel}%; height: 100%; background: ${barColor}; transition: all 0.3s ease;"></div>
-                  </div>`;
+        let hpText = `<div style="margin-top: 6px; display: flex; justify-content: space-between; align-items: center; line-height: 1; margin-bottom: 3px;">
+                          <span style="font-size: 0.75rem; color: #555; font-weight: bold;">이해도: ${curLevel}%</span>
+                          ${deltaHtml}
+                      </div>
+                      <div style="width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden;">
+                          <div style="width: ${curLevel}%; height: 100%; background: ${barColor}; transition: all 0.3s ease;"></div>
+                      </div>`;
         
         tbody.innerHTML += `<tr>
             <td><strong>${name}</strong>${hpText}</td>
-            <td>${Number(curScores[0]).toFixed(1)}</td>
-            <td>${Number(curScores[1]).toFixed(1)}</td>
-            <td>${Number(curScores[2]).toFixed(1)}</td>
-            <td>${Number(curScores[3]).toFixed(1)}</td>
-            <td>${Number(curScores[4]).toFixed(1)}</td>
+            <td><div style="font-size: 0.95rem;">${Number(curScores[0]).toFixed(1)}</div>${sDeltaHtmls[0]}</td>
+            <td><div style="font-size: 0.95rem;">${Number(curScores[1]).toFixed(1)}</div>${sDeltaHtmls[1]}</td>
+            <td><div style="font-size: 0.95rem;">${Number(curScores[2]).toFixed(1)}</div>${sDeltaHtmls[2]}</td>
+            <td><div style="font-size: 0.95rem;">${Number(curScores[3]).toFixed(1)}</div>${sDeltaHtmls[3]}</td>
+            <td><div style="font-size: 0.95rem;">${Number(curScores[4]).toFixed(1)}</div>${sDeltaHtmls[4]}</td>
         </tr>`;
     });
 

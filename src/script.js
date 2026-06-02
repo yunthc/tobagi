@@ -173,6 +173,9 @@ let turnCount = 0;
 let chartLabels = ["시작"];
 let understandingChart = null;
 
+// 🔥 대화 강제 종료 플래그
+let isSimulationStopped = false;
+
 // 🔥 대화 캐시용 배열 및 캐시 저장 함수
 let chatHistoryForStorage = [];
 
@@ -288,27 +291,59 @@ function renderTable() {
             const bgColor = '#e0e0e0'; 
             const levelTitle = level >= 100 ? '완벽히 이해함! ✨' : `이해도: ${level}%`;
             
+            let deltaHtml = '<span style="color: transparent; font-size: 0.75rem;">-</span>'; // 높이 유지용
+            if (understandingHistory[name] && understandingHistory[name].length > 1) {
+                const hist = understandingHistory[name];
+                const diff = hist[hist.length - 1] - hist[hist.length - 2];
+                if (diff > 0) {
+                    deltaHtml = `<span style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; animation: popUp 0.5s ease-out;">⬆${diff}</span>`;
+                } else if (diff < 0) {
+                    deltaHtml = `<span style="color: #F44336; font-size: 0.75rem; font-weight: bold; animation: popDown 0.5s ease-out;">⬇${Math.abs(diff)}</span>`;
+                }
+            }
+
             hpText = `
                 <div style="position: relative; margin-top: 8px; padding-bottom: 2px; cursor: help;"
                      onmouseenter="this.querySelector('.hp-tooltip').style.opacity='1'; this.querySelector('.hp-tooltip').style.visibility='visible';"
                      onmouseleave="this.querySelector('.hp-tooltip').style.opacity='0'; this.querySelector('.hp-tooltip').style.visibility='hidden';">
-                    <div class="hp-tooltip" style="visibility: hidden; opacity: 0; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: #424242; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap; transition: opacity 0.2s; pointer-events: none; z-index: 10;">
+                    <div class="hp-tooltip" style="visibility: hidden; opacity: 0; position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); background-color: #424242; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap; transition: opacity 0.2s; pointer-events: none; z-index: 10;">
                         ${levelTitle}
                     </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; line-height: 1;">
+                        <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: bold;">이해도</span>
+                        ${deltaHtml}
+                    </div>
                     <div style="width: 100%; height: 6px; background: ${bgColor}; border-radius: 3px; overflow: hidden;">
-                        <div style="width: ${level}%; height: 100%; background: ${barColor}; transition: width 0.5s ease-in-out; transition-property: width, background-color;"></div>
+                        <div style="width: ${level}%; height: 100%; background: ${barColor}; transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;"></div>
                     </div>
                 </div>
             `;
         }
+        
+        let sDeltaHtmls = Array(5).fill('<div style="color: transparent; font-size: 0.75rem; line-height: 1; margin-top: 2px;">-</div>');
+        if (scoreHistory[name] && scoreHistory[name].length > 1) {
+            const hist = scoreHistory[name];
+            const prevScores = hist[hist.length - 2];
+            const curScores = hist[hist.length - 1];
+            for (let i = 0; i < 5; i++) {
+                const diffStr = (curScores[i] - prevScores[i]).toFixed(1);
+                const diffVal = parseFloat(diffStr);
+                if (diffVal > 0) {
+                    sDeltaHtmls[i] = `<div style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popUp 0.5s ease-out;">⬆${diffStr}</div>`;
+                } else if (diffVal < 0) {
+                    sDeltaHtmls[i] = `<div style="color: #F44336; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popDown 0.5s ease-out;">⬇${Math.abs(diffVal).toFixed(1)}</div>`;
+                }
+            }
+        }
+        
         tbody.innerHTML += `
             <tr>
                 <td>${nameHtml}${hpText}</td>
-                <td>${Number(scores[0]).toFixed(1)}</td>
-                <td>${Number(scores[1]).toFixed(1)}</td>
-                <td>${Number(scores[2]).toFixed(1)}</td>
-                <td>${Number(scores[3]).toFixed(1)}</td>
-                <td>${Number(scores[4]).toFixed(1)}</td>
+                <td><div style="font-size: 0.95rem;">${Number(scores[0]).toFixed(1)}</div>${sDeltaHtmls[0]}</td>
+                <td><div style="font-size: 0.95rem;">${Number(scores[1]).toFixed(1)}</div>${sDeltaHtmls[1]}</td>
+                <td><div style="font-size: 0.95rem;">${Number(scores[2]).toFixed(1)}</div>${sDeltaHtmls[2]}</td>
+                <td><div style="font-size: 0.95rem;">${Number(scores[3]).toFixed(1)}</div>${sDeltaHtmls[3]}</td>
+                <td><div style="font-size: 0.95rem;">${Number(scores[4]).toFixed(1)}</div>${sDeltaHtmls[4]}</td>
             </tr>`;
     }
 }
@@ -446,6 +481,14 @@ typingStyle.innerHTML = `
     0% { opacity: 0.2; }
     20% { opacity: 1; }
     100% { opacity: 0.2; }
+}
+@keyframes popUp {
+    0% { transform: translateY(4px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes popDown {
+    0% { transform: translateY(-4px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
 }
 `;
 document.head.appendChild(typingStyle);
@@ -823,6 +866,8 @@ ${teacherPersonaPrompt}
 // 대화 확률 이벤트 체인 로직
 // 대화 확률 이벤트 체인 로직 (순수 자동 시뮬레이션 모드)
 async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
+    if (isSimulationStopped) return; // 💡 강제 종료 시 즉시 리턴
+    
     console.log(`🔄 [Chain] 자동 대화 턴 체인 시작 (직전 발화자: ${lastSpeaker})`);
     
     let currentSpeaker = lastSpeaker;
@@ -831,6 +876,8 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
     let keepGoing = true;
 
     while (keepGoing && chainCount < 100) {
+        if (isSimulationStopped) return;
+
         keepGoing = false;
 
         // 💡 텍스트를 분석하여 불린 이름 확인 및 확률 동적 조정
@@ -868,6 +915,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         // 1. 민준 (발화 당첨 시)
         if (currentSpeaker !== "민준" && Math.random() <= probMinjun) {
             await sleep(getSleepTime()); // 💡 Gemini API 429 방지 및 인간미 있는 대화 딜레이
+            if (isSimulationStopped) return;
 
             console.log(`🎲 [Chain] '민준' 발화 당첨!`);
             
@@ -903,6 +951,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         // 2. 서연 (발화 당첨 시)
         if (currentSpeaker !== "서연" && Math.random() <= probSeoyeon) {
             await sleep(getSleepTime());
+            if (isSimulationStopped) return;
 
             console.log(`🎲 [Chain] '서연' 발화 당첨!`);
             
@@ -936,6 +985,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         // 3. 연우 (발화 당첨 시)
         if (currentSpeaker !== "연우" && Math.random() <= probYeonwoo) {
             await sleep(getSleepTime());
+            if (isSimulationStopped) return;
 
             console.log(`🎲 [Chain] '연우' 발화 당첨!`);
             
@@ -972,6 +1022,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
     
     if (currentSpeaker !== "교사") {
         await sleep(getSleepTime());
+        if (isSimulationStopped) return;
         console.log(`👨‍🏫 [System] 대화 흐름 정체 감지, '교사' 강제 개입!`);
         const tRes = await callOllama("교사");
         appendMessage("교사", tRes.reply, false, false, tRes.principle);
@@ -985,6 +1036,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         await runAiTurnChain("교사", tRes.reply);
     } else {
         await sleep(getSleepTime());
+        if (isSimulationStopped) return;
         const backupStudent = ACTIVE_STUDENTS.includes("서연") ? "서연" : ACTIVE_STUDENTS[0];
         console.log(`👩 [System] 교사 발화 후 정체, '${backupStudent}'이(가) 총대 메고 답변 강제!`);
         const res = await callOllama(backupStudent);
@@ -1172,6 +1224,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (confirm("진행 중인 모든 대화를 지우고 처음부터 다시 시작하시겠습니까?")) {
                 localStorage.removeItem('tobagi_sim_state');
                 location.reload();
+            }
+        });
+    }
+
+    // 💡 대화 강제 종료 버튼 로직
+    const stopSimBtn = document.getElementById('stopSimBtn');
+    if (stopSimBtn) {
+        stopSimBtn.addEventListener('click', () => {
+            if (confirm("진행 중인 대화를 강제로 종료하시겠습니까?\n종료 후 결과 DB 저장이 가능합니다.")) {
+                isSimulationStopped = true;
+                appendMessage("시스템", "사용자에 의해 시뮬레이션이 강제 종료되었습니다. 현재 상태 그대로 DB 저장이 가능합니다.", false);
+                stopSimBtn.style.display = 'none';
             }
         });
     }
