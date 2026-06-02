@@ -296,9 +296,9 @@ function renderTable() {
                 const hist = understandingHistory[name];
                 const diff = hist[hist.length - 1] - hist[hist.length - 2];
                 if (diff > 0) {
-                    deltaHtml = `<span style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; animation: popUp 0.5s ease-out;">⬆${diff}</span>`;
+                    deltaHtml = `<span style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; animation: popUp 0.5s ease-out;">⬆</span>`;
                 } else if (diff < 0) {
-                    deltaHtml = `<span style="color: #F44336; font-size: 0.75rem; font-weight: bold; animation: popDown 0.5s ease-out;">⬇${Math.abs(diff)}</span>`;
+                    deltaHtml = `<span style="color: #F44336; font-size: 0.75rem; font-weight: bold; animation: popDown 0.5s ease-out;">⬇</span>`;
                 }
             }
 
@@ -329,9 +329,9 @@ function renderTable() {
                 const diffStr = (curScores[i] - prevScores[i]).toFixed(1);
                 const diffVal = parseFloat(diffStr);
                 if (diffVal > 0) {
-                    sDeltaHtmls[i] = `<div style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popUp 0.5s ease-out;">⬆${diffStr}</div>`;
+                    sDeltaHtmls[i] = `<div style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popUp 0.5s ease-out;">⬆</div>`;
                 } else if (diffVal < 0) {
-                    sDeltaHtmls[i] = `<div style="color: #F44336; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popDown 0.5s ease-out;">⬇${Math.abs(diffVal).toFixed(1)}</div>`;
+                    sDeltaHtmls[i] = `<div style="color: #F44336; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popDown 0.5s ease-out;">⬇</div>`;
                 }
             }
         }
@@ -794,13 +794,29 @@ async function checkTeacherIntervention() {
         console.log("💬 [System] 대화가 너무 짧아 개입 판단을 건너뜁니다.");
         return false; // 대화가 너무 짧으면 개입하지 않음
     }
-    const lastFiveMessages = Array.from(messages).slice(-5);
+    
+    // 판단의 정확성을 위해 최근 6턴으로 넓혀서 추출
+    const lastSixMessages = Array.from(messages).slice(-6);
     let recentContext = "";
-    lastFiveMessages.forEach(msg => {
-        const speaker = msg.querySelector('.speaker-name')?.innerText || "사용자";
-        const content = msg.innerText.replace(speaker, "").trim();
+    const recentSpeakers = [];
+    
+    lastSixMessages.forEach(msg => {
+        const nameSpan = msg.querySelector('.s-name');
+        const speaker = nameSpan ? nameSpan.innerText : (msg.querySelector('.speaker-name')?.innerText || "사용자");
+        recentSpeakers.push(speaker);
+        
+        const clone = msg.cloneNode(true);
+        const sn = clone.querySelector('.speaker-name');
+        if(sn) sn.remove();
+        const content = clone.innerText.trim();
         recentContext += `${speaker}: ${content}\n`;
     });
+
+    // 1.5 💡 교사의 연속 개입 방지: 최근 2턴 이내에 교사 발화가 있다면 LLM 판단 자체를 스킵
+    if (recentSpeakers.slice(-2).includes("교사")) {
+        console.log("💬 [System] 최근 2턴 내 교사 발화가 감지되어 개입 판단을 건너뜁니다.");
+        return false;
+    }
 
     // 2. 교사의 커스텀 페르소나(지도 성향) 프롬프트 가져오기
     const teacherPersonaPrompt = localStorage.getItem('persona_prompt_교사') || TEACHER_PROMPT_BASE;
@@ -810,7 +826,7 @@ async function checkTeacherIntervention() {
 당신은 '교사'이며, 학생들의 토론을 관찰하고 대화가 비생산적으로 흐를 때만 개입하는 역할을 맡고 있습니다.
 아래는 최근 대화 내용입니다.
 
-[최근 대화 5턴]
+[최근 대화 6턴]
 ${recentContext}
 
 [당신의 지도 성향]
@@ -823,6 +839,10 @@ ${teacherPersonaPrompt}
 - 과제와 전혀 상관없는 딴 이야기를 하고 있다면 (Off-topic)
 - 💡 학생들이 현재 과제의 핵심 정답을 도출해내어 대략적으로 합의했을 때 (불필요한 검산이나 재확인 없이 즉시 개입하여 칭찬하고 다음 과제로 넘어가기 위함)
 (예: '지시적' 성향이 강하면 더 빠르게 개입, '대화적' 성향이 강하면 더 오래 관망)
+
+🚨 [개입 제한 규칙]
+- 최근 대화에 이미 당신(교사)이 질문이나 힌트를 던진 기록이 있다면, 학생들에게 충분히 논의할 시간을 주기 위해 가급적 개입을 자제(NO)하세요.
+- 교사가 직전에 했던 개입과 동일한 내용이나 성격의 힌트를 반복해서는 안 됩니다.
 
 판단 결과만 아래 JSON 형식으로 응답하세요. 다른 설명은 절대 추가하지 마세요.
 {"intervention_needed": "YES" or "NO"}

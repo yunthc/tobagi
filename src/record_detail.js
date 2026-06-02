@@ -203,9 +203,9 @@ function updateViewToStep(step) {
         let diff = curLevel - prevLevel;
         let deltaHtml = '<span style="color: transparent; font-size: 0.75rem;">-</span>';
         if (diff > 0) {
-            deltaHtml = `<span style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; animation: popUp 0.5s ease-out;">⬆${diff}</span>`;
+            deltaHtml = `<span style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; animation: popUp 0.5s ease-out;">⬆</span>`;
         } else if (diff < 0) {
-            deltaHtml = `<span style="color: #F44336; font-size: 0.75rem; font-weight: bold; animation: popDown 0.5s ease-out;">⬇${Math.abs(diff)}</span>`;
+            deltaHtml = `<span style="color: #F44336; font-size: 0.75rem; font-weight: bold; animation: popDown 0.5s ease-out;">⬇</span>`;
         }
 
         // 💡 과거에 저장된 객체 래핑 데이터 호환성 처리 ({ scores: [...] } 구조 방어)
@@ -221,9 +221,9 @@ function updateViewToStep(step) {
                 const diffStr = (curScores[i] - prevScores[i]).toFixed(1);
                 const diffVal = parseFloat(diffStr);
                 if (diffVal > 0) {
-                    sDeltaHtmls[i] = `<div style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popUp 0.5s ease-out;">⬆${diffStr}</div>`;
+                    sDeltaHtmls[i] = `<div style="color: #4CAF50; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popUp 0.5s ease-out;">⬆</div>`;
                 } else if (diffVal < 0) {
-                    sDeltaHtmls[i] = `<div style="color: #F44336; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popDown 0.5s ease-out;">⬇${Math.abs(diffVal).toFixed(1)}</div>`;
+                    sDeltaHtmls[i] = `<div style="color: #F44336; font-size: 0.75rem; font-weight: bold; line-height: 1; margin-top: 2px; animation: popDown 0.5s ease-out;">⬇</div>`;
                 }
             }
         }
