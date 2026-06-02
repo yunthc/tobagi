@@ -93,7 +93,12 @@ function renderDetail(data) {
         else if (log.speaker === '연우') { msgDiv.style.backgroundColor = '#e3f2fd'; msgDiv.style.border = '1px solid #bbdefb'; }
         else if (log.speaker === '교사') { msgDiv.style.backgroundColor = '#ffffff'; msgDiv.style.border = '1px solid #e0e0e0'; }
 
-        msgDiv.innerHTML = isUser ? log.text : `<div class="speaker-name">${log.speaker}</div>${log.text}`;
+        let speakerHtml = `<div class="speaker-name"><span class="s-name">${log.speaker}</span></div>`;
+        if (log.principle) {
+            speakerHtml = `<div class="speaker-name"><span class="s-name">${log.speaker}</span> <span class="badge" style="background: #9B59B6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">[${log.principle}]</span></div>`;
+        }
+        
+        msgDiv.innerHTML = isUser ? log.text : `${speakerHtml}${log.text}`;
         chatBox.appendChild(msgDiv);
     });
     

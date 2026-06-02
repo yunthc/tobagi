@@ -117,15 +117,35 @@ let currentTask = PROBLEM_DB[currentTaskId] || PROBLEM_DB['task1'];
 let TASK_INFO = `[수행 과제: ${currentTask.title}]\n🚨[수업 배경]: ${currentTask.background}\n[제시문] ${currentTask.content}\n\n${currentTask.goals.map((g, i) => `과제${i+1}) ${g}`).join('\n')}`;
 
 // 👨‍🏫 대화적 교수법 원칙 상수 (교사 전용 지침)
-const TEACHER_PROMPT_BASE = `[대화적 교수법 5가지 원칙]
-1. 집단적 (Collective): 교사와 학생이 함께 지식을 구성하는 공동 탐구의 장을 만드세요. (예: "시준이의 생각을 우리 모두 같이 살펴봅시다")
-2. 상호적 (Reciprocal): 학생들이 서로의 말에 귀 기울이고, 대안적 관점을 존중하며 대화하도록 유도하세요. (예: "이 말에 동의하는 사람? 왜 그렇게 생각하나요?")
-3. 지지적 (Supportive): 오답에 대한 두려움 없이 자유롭게 표현할 수 있는 심리적 안전망을 만드세요. (예: "그런 시도는 아주 자연스러운 출발점이에요.")
-4. 누적적 (Cumulative): 이전 발언을 발판 삼아 다음 사고로 연결하며 이해를 점진적으로 심화하세요. (단계적 발문 적용)
-5. 목적 지향적 (Purposeful): 명확한 학습 목표를 향해 대화를 설계하고 조율하며, 대화가 딴 길로 새면 부드럽게 목표로 되돌리세요.
+const TEACHER_PROMPT_BASE = `당신은 '대화적 교수법(Dialogic Teaching)'의 5가지 원칙을 실천하는 수학 교사 에이전트입니다.
+학생과의 모든 상호작용에서 아래 원칙과 구체적 전략을 반드시 준수하세요.
 
-[도움요청 유형에 따른 대응 지침]
-학생의 패턴(시도 우선, 힌트 우선, 도움 회피 등)을 파악하여 무작정 정답을 주지 말고 맞춤형 피드백을 제공하세요.`;
+## 대화적 교수법 5가지 원칙 및 실행 전략
+
+### 1. 집단적 (Collective)
+원칙: 교사와 학생이 함께 지식을 구성하는 공동 탐구의 장을 만든다.
+전략: 특정 학생의 생각을 학급 전체의 토론 소재로 확장한다. "시준이의 생각을 우리 모두 같이 살펴봅시다"처럼 개인 발언을 공동 탐구로 전환한다. 학생이 혼자 정답을 찾도록 두지 않고, 함께 생각을 펼쳐나가도록 유도한다.
+발화 예시: "시준이가 '1/3이다'라고 했는데, 이 생각을 우리 함께 살펴봅시다. 시준이의 말이 맞는지, 아니면 다른 가능성이 있는지 같이 탐구해 볼게요. 지금 시준이와 같은 생각을 하고 있는 친구, 손 들어볼까요?"
+
+### 2. 상호적 (Reciprocal)
+원칙: 학생들이 서로의 말에 귀 기울이고, 대안적 관점을 존중하며 대화한다.
+전략: 한 학생의 발언을 다른 학생이 재진술하거나 평가하도록 요청한다. 동의/반대 의견을 이유와 함께 말하도록 유도한다. 교사가 직접 정오를 판단하지 않고, 학생 간 대화로 판단을 유보한다.
+발화 예시: "방금 시준이가 '결과가 A, B, C 세 가지니까 1/3'이라고 했어요. 이 말에 동의하는 친구? 동의하지 않는 친구? 동의하지 않는다면 시준이에게 직접 왜 그런지 설명해 줄 수 있을까요?"
+
+### 3. 지지적 (Supportive)
+원칙: 오답에 대한 두려움 없이 자유롭게 아이디어를 표현할 수 있는 심리적 안전망을 만든다.
+전략: 오개념을 바로 교정하지 않고, 틀린 생각에서 출발하여 함께 점검한다. 충분한 생각할 시간(wait time)을 제공한다. "좋은 시도야", "그렇게 생각할 수 있어" 등으로 시도 자체를 인정한다. 추측과 상상도 환영한다는 분위기를 명시적으로 조성한다.
+발화 예시: "시준이의 생각은 아주 자연스러운 출발점이에요. '경우가 3가지니까 1/3'이라고 생각하는 건 많은 사람이 처음에 떠올리는 직관이거든요. 틀렸다고 바로 말하는 게 아니라, 이 생각이 어디까지 맞고 어디서 달라지는지 같이 천천히 따라가 봅시다. 아직 확신이 없어도 괜찮아요."
+
+### 4. 누적적 (Cumulative)
+원칙: 이전 발언을 발판 삼아 다음 사고로 연결하며, 이해를 점진적으로 심화한다.
+전략: 학생의 답변을 다음 질문의 출발점으로 활용한다. "그 생각에 이어서", "방금 말을 발판으로" 등의 연결 표현을 사용한다. 단계적 발문으로 오개념 → 의심 → 수정 → 심화의 흐름을 설계한다.
+발화 예시: "P에서 공이 처음 만나는 갈림길에서 어디로 갈 수 있어요? 왼쪽으로 가면 바로 A에 도착하죠? 오른쪽으로 가면 어떻게 돼요? 그럼 B에 도착하려면 공이 어떤 길을 거쳐야 하죠? A에 도달하는 것과 B에 도달하는 것, 거쳐야 하는 갈림길 횟수가 같은가요?"
+
+### 5. 목적 지향적 (Purposeful)
+원칙: 자유로운 대화 속에서도 교사는 명확한 학습 목표를 향해 대화를 설계하고 조율한다.
+전략: 대화가 탈선할 경우 학습 목표로 부드럽게 되돌린다. 대화의 최종 목적지를 항상 염두에 둔다. 흥미로운 탈선 발언도 "좋은 생각인데, 오늘 우리 목표로 돌아와서..."로 연결한다. 대화 마무리에서 핵심 개념을 학생 언어로 정리하게 유도한다.
+발화 예시: "지금까지 나온 이야기들을 정리해봅시다. 우리가 오늘 발견한 것은 무엇인가요? '결과의 수'를 세는 것과 '각 경로의 확률'을 계산하는 것이 왜 다른지, 누가 자신의 말로 설명해 줄 수 있나요? 그게 바로 오늘 우리가 함께 이해한 핵심이에요."`;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -353,15 +373,19 @@ function getChatContext() {
     const messages = document.querySelectorAll('.message:not(.typing-indicator)');
     let context = "";
     messages.forEach(msg => {
-        const speaker = msg.querySelector('.speaker-name') ? msg.querySelector('.speaker-name').innerText : "사용자";
-        const content = msg.innerText.replace(speaker, "").trim();
+        const nameSpan = msg.querySelector('.s-name');
+        const speaker = nameSpan ? nameSpan.innerText : (msg.querySelector('.speaker-name') ? msg.querySelector('.speaker-name').innerText : "사용자");
+        const clone = msg.cloneNode(true);
+        const sn = clone.querySelector('.speaker-name');
+        if(sn) sn.remove();
+        const content = clone.innerText.trim();
         context += `${speaker}: ${content}\n`;
     });
     return context;
 }
 
 // UI 메시지 추가 함수
-function appendMessage(sender, text, isUser, isRestore = false) {
+function appendMessage(sender, text, isUser, isRestore = false, principle = null) {
     const chatBox = document.getElementById('chatBox');
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${isUser ? 'msg-user' : 'msg-ai'}`;
@@ -381,7 +405,12 @@ function appendMessage(sender, text, isUser, isRestore = false) {
         msgDiv.style.border = '1px solid #e0e0e0';
     }
 
-    if (!isUser) msgDiv.innerHTML = `<div class="speaker-name">${sender}</div>${text}`;
+    let speakerHtml = `<div class="speaker-name"><span class="s-name">${sender}</span></div>`;
+    if (principle) {
+        speakerHtml = `<div class="speaker-name"><span class="s-name">${sender}</span> <span class="badge" style="background: #9B59B6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">[${principle}]</span></div>`;
+    }
+
+    if (!isUser) msgDiv.innerHTML = `${speakerHtml}${text}`;
     else msgDiv.innerHTML = text;
     chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -392,7 +421,7 @@ function appendMessage(sender, text, isUser, isRestore = false) {
     }
 
     if (!isRestore) {
-        chatHistoryForStorage.push({ sender, text, isUser });
+        chatHistoryForStorage.push({ sender, text, isUser, principle });
         saveSimulationState();
     }
 }
@@ -441,7 +470,7 @@ function showTypingIndicator(sender) {
     }
 
     msgDiv.innerHTML = `
-        <div class="speaker-name">${sender}</div>
+        <div class="speaker-name"><span class="s-name">${sender}</span></div>
         <div class="dots"><span>.</span><span>.</span><span>.</span></div>
     `;
     chatBox.appendChild(msgDiv);
@@ -626,7 +655,12 @@ async function callOllama(roleName) {
 
     // 💡 교사 에이전트가 발화 의도나 행동 지침을 함께 출력하는 환각 현상 방지
     if (roleName === "교사") {
-        taskPrompt += "\n\n[🚨출력 규칙] 당신의 발화 의도나 생각, 행동 지침(예: '(학생들을 보며)', '(지지적)') 같은 괄호나 설명은 절대 포함하지 말고, 실제 대화 내용만 간결하게 출력하세요.";
+        taskPrompt = `위 Context(대화 내역)에서 직전 3턴의 대화를 면밀히 분석하세요.
+그리고 당신에게 주어진 '대화적 교수법'의 5가지 원칙(집단적, 상호적, 지지적, 누적적, 목적 지향적) 중 현재 상황에서 가장 필요한 1가지 원칙을 결정하세요.
+결정한 1가지 원칙의 전략을 적용하여, 학생들의 사고를 진전시키거나 대화를 조율하는 교사의 다음 톡을 1~2문장으로 작성해줘. 혼자 과제 진도를 빼거나 정답을 바로 알려주지 말고, 직전 대화의 맥락을 이어가며 문제를 해결하도록 유도하세요.
+[🚨출력 규칙] 반드시 아래 형식에 맞춰서 출력하세요. 다른 설명은 추가하지 마세요.
+[선택한 원칙] (집단적, 상호적, 지지적, 누적적, 목적 지향적 중 택1)
+[발화] (학생들에게 할 실제 대화 내용)`;
     }
 
     const fullPrompt = `System: ${sysPrompt}\n\nContext:\n${context}\n\nTask: ${taskPrompt}`;
@@ -634,13 +668,11 @@ async function callOllama(roleName) {
     try {
         // 모델 선택에 따라 경로 분기
         const selected = getSelectedModel();
-        let reply = "";
+        let rawReply = "";
+
         if (selected === 'gemini') {
             // Gemini 호출 (API key 기반)
-            reply = await callGemini(fullPrompt);
-            removeTypingIndicator(typingId);
-            console.log(`🤖 [Gemini] '${roleName}' 응답:`, reply);
-            return reply;
+            rawReply = await callGemini(fullPrompt);
         } else {
             // 기본: 로컬 Ollama/Gemma
             const response = await fetch(OLLAMA_URL, {
@@ -655,15 +687,35 @@ async function callOllama(roleName) {
             });
             const data = await response.json();
             const replyO = (data && (data.response || data.text || data.output)) ? (data.response || data.text || data.output) : JSON.stringify(data);
-            const finalReply = typeof replyO === 'string' ? replyO.trim() : String(replyO);
-            removeTypingIndicator(typingId); // 💡 응답 완료 시 로딩 말풍선 제거
-            console.log(`🤖 [Ollama] '${roleName}' 응답:`, finalReply);
-            return finalReply;
+            rawReply = typeof replyO === 'string' ? replyO.trim() : String(replyO);
         }
+
+        removeTypingIndicator(typingId); // 💡 응답 완료 시 로딩 말풍선 제거
+        
+        let finalReply = rawReply;
+        let principlePart = null;
+        
+        // 👨‍🏫 교사인 경우 출력 포맷에서 [선택한 원칙]과 [발화]를 파싱하여 분리
+        if (roleName === "교사") {
+            const splitContent = finalReply.split(/\[발화\]/);
+            if (splitContent.length > 1) {
+                // 마크다운(*) 등의 기호가 섞여 들어올 경우를 대비해 정제
+                principlePart = splitContent[0].replace(/\[선택한 원칙\]/g, '').replace(/\*/g, '').trim();
+                console.log(`\n======================================================`);
+                console.log(`👨‍🏫 [교사 개입 전략] AI가 선택한 원칙: ${principlePart}`);
+                console.log(`======================================================\n`);
+                
+                finalReply = splitContent[1].trim(); // 말풍선에는 실제 발화만 전달
+            }
+        }
+        
+        console.log(`🤖 [${selected.toUpperCase()}] '${roleName}' 최종 응답:`, finalReply);
+        return { reply: finalReply, principle: principlePart };
+        
     } catch (e) {
         console.error(`🚨 [Ollama] '${roleName}' API 호출 에러:`, e);
         removeTypingIndicator(typingId); // 💡 에러 시에도 로딩 말풍선 제거
-        return "아... 나 뇌정지 왔어 방금 ㅠㅠ";
+        return { reply: "아... 나 뇌정지 왔어 방금 ㅠㅠ", principle: null };
     }
 }
 
@@ -800,13 +852,13 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
 
             console.log(`🎲 [Chain] '민준' 발화 당첨!`);
             
-            const reply = await callOllama("민준");
-            appendMessage("민준", reply, false);
+            const res = await callOllama("민준");
+            appendMessage("민준", res.reply, false, false, res.principle);
             
             currentSpeaker = "민준"; 
             keepGoing = true; 
             chainCount++;
-            currentMessageText = reply; 
+            currentMessageText = res.reply; 
             
             await trackCompetencies("민준"); // 실시간 역량 및 이해도 평가
 
@@ -814,16 +866,16 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
             if (await checkTeacherIntervention()) {
                 console.log(`👨‍🏫 [System] 교사 개입 결정! (대화 정체 감지)`);
                 await sleep(18000);
-                const teacherReply = await callOllama("교사");
-                appendMessage("교사", teacherReply, false);
+                const tRes = await callOllama("교사");
+                appendMessage("교사", tRes.reply, false, false, tRes.principle);
                 
-                if (teacherReply.includes("여기까지 할게요") && teacherReply.includes("수고했어요")) {
+                if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
                     console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
                     return; // 완전 종료
                 }
 
                 // 교사 발언 후 새로운 학생 턴 체인으로 완전히 토스하고 현재 루프 종료
-                await runAiTurnChain("교사", teacherReply);
+                await runAiTurnChain("교사", tRes.reply);
                 return; 
             }
             continue;
@@ -835,28 +887,28 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
 
             console.log(`🎲 [Chain] '서연' 발화 당첨!`);
             
-            const reply = await callOllama("서연");
-            appendMessage("서연", reply, false);
+            const res = await callOllama("서연");
+            appendMessage("서연", res.reply, false, false, res.principle);
             
             currentSpeaker = "서연"; 
             keepGoing = true; 
             chainCount++;
-            currentMessageText = reply; 
+            currentMessageText = res.reply; 
             
             await trackCompetencies("서연");
 
             if (await checkTeacherIntervention()) {
                 console.log(`👨‍🏫 [System] 교사 개입 결정! (대화 정체 감지)`);
                 await sleep(18000);
-                const teacherReply = await callOllama("교사");
-                appendMessage("교사", teacherReply, false);
+                const tRes = await callOllama("교사");
+                appendMessage("교사", tRes.reply, false, false, tRes.principle);
                 
-                if (teacherReply.includes("여기까지 할게요") && teacherReply.includes("수고했어요")) {
+                if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
                     console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
                     return; // 완전 종료
                 }
 
-                await runAiTurnChain("교사", teacherReply);
+                await runAiTurnChain("교사", tRes.reply);
                 return; 
             }
             continue;
@@ -868,28 +920,28 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
 
             console.log(`🎲 [Chain] '연우' 발화 당첨!`);
             
-            const reply = await callOllama("연우");
-            appendMessage("연우", reply, false);
+            const res = await callOllama("연우");
+            appendMessage("연우", res.reply, false, false, res.principle);
             
             currentSpeaker = "연우"; 
             keepGoing = true; 
             chainCount++;
-            currentMessageText = reply; 
+            currentMessageText = res.reply; 
             
             await trackCompetencies("연우");
 
             if (await checkTeacherIntervention()) {
                 console.log(`👨‍🏫 [System] 교사 개입 결정! (대화 정체 감지)`);
                 await sleep(18000);
-                const teacherReply = await callOllama("교사");
-                appendMessage("교사", teacherReply, false);
+                const tRes = await callOllama("교사");
+                appendMessage("교사", tRes.reply, false, false, tRes.principle);
                 
-                if (teacherReply.includes("여기까지 할게요") && teacherReply.includes("수고했어요")) {
+                if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
                     console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
                     return; // 완전 종료
                 }
 
-                await runAiTurnChain("교사", teacherReply);
+                await runAiTurnChain("교사", tRes.reply);
                 return; 
             }
             continue;
@@ -902,26 +954,26 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
     if (currentSpeaker !== "교사") {
         await sleep(18000);
         console.log(`👨‍🏫 [System] 대화 흐름 정체 감지, '교사' 강제 개입!`);
-        const reply = await callOllama("교사");
-        appendMessage("교사", reply, false);
+        const tRes = await callOllama("교사");
+        appendMessage("교사", tRes.reply, false, false, tRes.principle);
         
-        if (reply.includes("여기까지 할게요") && reply.includes("수고했어요")) {
+        if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
             console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
             return; // 완전 종료
         }
         
         // 교사가 물꼬를 텄으니 다시 학생들 반응 유도
-        await runAiTurnChain("교사", reply);
+        await runAiTurnChain("교사", tRes.reply);
     } else {
         await sleep(18000);
         const backupStudent = ACTIVE_STUDENTS.includes("서연") ? "서연" : ACTIVE_STUDENTS[0];
         console.log(`👩 [System] 교사 발화 후 정체, '${backupStudent}'이(가) 총대 메고 답변 강제!`);
-        const reply = await callOllama(backupStudent);
-        appendMessage(backupStudent, reply, false);
+        const res = await callOllama(backupStudent);
+        appendMessage(backupStudent, res.reply, false, false, res.principle);
         await trackCompetencies(backupStudent); 
         
         // 서연이가 받아쳤으니 다시 체인 가동
-        await runAiTurnChain(backupStudent, reply);
+        await runAiTurnChain(backupStudent, res.reply);
     }
 }
 
@@ -972,10 +1024,18 @@ async function executeSaveToDB() {
         // 전체 대화 기록 수집
         const messages = [];
         document.querySelectorAll('.message:not(.typing-indicator)').forEach((msg, index) => {
+            const nameSpan = msg.querySelector('.s-name');
             const speakerEl = msg.querySelector('.speaker-name');
-            const speaker = speakerEl ? speakerEl.innerText : "시스템/사용자";
-            const text = msg.innerText.replace(speaker, "").trim();
-            messages.push({ order: index + 1, speaker, text });
+            const speaker = nameSpan ? nameSpan.innerText : (speakerEl ? speakerEl.innerText : "시스템/사용자");
+            
+            const badgeEl = msg.querySelector('.badge');
+            const principle = badgeEl ? badgeEl.innerText.replace(/[\[\]]/g, '') : null;
+
+            const clone = msg.cloneNode(true);
+            const sn = clone.querySelector('.speaker-name');
+            if(sn) sn.remove();
+            const text = clone.innerText.trim();
+            messages.push({ order: index + 1, speaker, text, principle });
         });
 
         // 현재 시간을 보기 좋게 포맷팅 (예: 2024. 4. 25. 오후 3:15:20)
@@ -1152,7 +1212,7 @@ async function loadProblemsAndInit() {
             if (chatBox) chatBox.innerHTML = ''; 
             
             chatHistoryForStorage.forEach(msg => {
-                appendMessage(msg.sender, msg.text, msg.isUser, true);
+                appendMessage(msg.sender, msg.text, msg.isUser, true, msg.principle);
             });
 
             renderTable();
