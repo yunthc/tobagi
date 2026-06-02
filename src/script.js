@@ -614,10 +614,15 @@ async function trackCompetencies(targetSpeaker) {
                     if (understandingLevels[name] !== undefined) {
                         let delta = Number(value);
                         if (Math.abs(delta) > 30) {
-                            understandingLevels[name] = Math.max(0, Math.min(100, delta));
+                            // LLM이 변화량 대신 절대 점수를 반환한 경우 (차이값 계산)
+                            let diff = delta - understandingLevels[name];
+                            if (diff < 0) diff = diff / 3; // 하락폭은 1/3로 축소
+                            understandingLevels[name] = Math.max(0, Math.min(100, Math.round(understandingLevels[name] + diff)));
                         } else {
+                            // 💡 상승/하락 비율 4:1 적용 (음수일 경우 하락폭을 1/3로 줄임)
+                            if (delta < 0) delta = delta / 3;
                             const newLevel = understandingLevels[name] + delta;
-                            understandingLevels[name] = Math.max(0, Math.min(100, newLevel));
+                            understandingLevels[name] = Math.max(0, Math.min(100, Math.round(newLevel)));
                         }
                     }
                 }
@@ -659,7 +664,7 @@ async function callOllama(roleName) {
         const level = understandingLevels[roleName];
         if (level !== undefined) {
             // 💡 오답 발동 확률 최대 80%로 제한
-            const errorProb = Math.min(0.8, (100 - level) / 100);
+            const errorProb = (100 - level) / 150;
             if (Math.random() < errorProb) {
                 taskPrompt += `\n\n[🚨강제 지시: 현재 당신은 잘못된 수학적 개념을 가지고 있습니다. **반드시 구체적이고 치명적인 수학적 오류(잘못된 계산, 오개념, 엉뚱한 규칙 적용 등)를 저지르는 발화를 하십시오.** 절대 정답을 말해서는 안 됩니다!]`;
                 console.log(`😈 [System] '${roleName}' 강제 오답 발화 트리거 발동! (이해도: ${level}%, 발동확률: ${errorProb * 100}%)`);
