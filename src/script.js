@@ -173,7 +173,7 @@ let turnCount = 0;
 let chartLabels = ["시작"];
 let understandingChart = null;
 
-// 🔥 대화 강제 종료 플래그
+// 🔥 대화 일시정지/재생 플래그
 let isSimulationStopped = false;
 
 // 🔥 대화 캐시용 배열 및 캐시 저장 함수
@@ -1228,14 +1228,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 💡 대화 강제 종료 버튼 로직
+    // 💡 대화 일시정지/재생 버튼 로직
     const stopSimBtn = document.getElementById('stopSimBtn');
     if (stopSimBtn) {
         stopSimBtn.addEventListener('click', () => {
-            if (confirm("진행 중인 대화를 강제로 종료하시겠습니까?\n종료 후 결과 DB 저장이 가능합니다.")) {
+            if (!isSimulationStopped) {
                 isSimulationStopped = true;
-                appendMessage("시스템", "사용자에 의해 시뮬레이션이 강제 종료되었습니다. 현재 상태 그대로 DB 저장이 가능합니다.", false);
-                stopSimBtn.style.display = 'none';
+                stopSimBtn.innerHTML = '▶️';
+                stopSimBtn.title = '대화 재개';
+                appendMessage("시스템", "⏸️ 대화가 일시 정지되었습니다. 다시 재생하려면 버튼을 누르세요.", false);
+            } else {
+                isSimulationStopped = false;
+                stopSimBtn.innerHTML = '⏸️';
+                stopSimBtn.title = '대화 일시정지';
+                appendMessage("시스템", "▶️ 대화를 재개합니다...", false);
+                
+                let lastSpeaker = "교사";
+                let lastText = "";
+                if (chatHistoryForStorage.length > 0) {
+                    const lastMsg = chatHistoryForStorage[chatHistoryForStorage.length - 1];
+                    lastSpeaker = lastMsg.sender;
+                    lastText = lastMsg.text;
+                }
+                runAiTurnChain(lastSpeaker, lastText);
             }
         });
     }
