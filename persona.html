@@ -17,6 +17,16 @@
         <h1>학생 정의적 영역 설문</h1>
         <p id="surveyDesc" style="color: #7f8c8d; margin-bottom: 20px;">각 문항에 대해 1점(아니다)부터 3점(그렇다)까지 선택하여 학생의 성향을 디자인하세요.</p>
         
+        <div class="character-selector" style="background: #E8F5E9; border-color: #C8E6C9; margin-bottom: 20px;">
+            <label for="studentCountSelect"><strong>👥 참여할 모둠원 수 설정: </strong></label>
+            <select id="studentCountSelect" onchange="localStorage.setItem('student_count', this.value); alert('모둠원 수가 ' + this.value + '명으로 설정되었습니다.\n메인 시뮬레이터 화면을 새로고침하면 적용됩니다.');">
+                <option value="3">3명 (민준, 서연, 연우)</option>
+                <option value="2">2명 (민준, 서연)</option>
+                <option value="1">1명 (민준)</option>
+            </select>
+            <p style="font-size: 0.85rem; color: #2E7D32; margin-top: 8px; margin-bottom: 0;">※ 선택한 인원만큼만 시뮬레이션에 참여합니다.</p>
+        </div>
+
         <div class="character-selector">
             <label for="targetCharacter"><strong>대상 모둠원 선택: </strong></label>
             <select id="targetCharacter">
