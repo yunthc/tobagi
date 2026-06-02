@@ -111,6 +111,22 @@ let turnCount = 0;
 let chartLabels = ["시작"];
 let understandingChart = null;
 
+// 🔥 대화 캐시용 배열 및 캐시 저장 함수
+let chatHistoryForStorage = [];
+
+function saveSimulationState() {
+    const simState = {
+        currentScores,
+        understandingLevels,
+        understandingHistory,
+        scoreHistory,
+        turnCount,
+        chartLabels,
+        chatHistoryForStorage
+    };
+    localStorage.setItem('tobagi_sim_state', JSON.stringify(simState));
+}
+
 
 // 프롬프트 가이드라인 (대환장 중학생 모드 반영)
 function getSystemPrompt(roleName) {
@@ -268,6 +284,7 @@ function initChart() {
 // 차트 데이터 갱신 함수 (지표 선택 시)
 function updateChartData() {
     if (!understandingChart) return;
+    understandingChart.data.labels = chartLabels; // 캐시 복원 시 차트 라벨 참조 업데이트
     const metric = document.getElementById('chartMetricSelect').value;
     
     ACTIVE_STUDENTS.forEach((name, index) => {
@@ -303,7 +320,7 @@ function getChatContext() {
 }
 
 // UI 메시지 추가 함수
-function appendMessage(sender, text, isUser) {
+function appendMessage(sender, text, isUser, isRestore = false) {
     const chatBox = document.getElementById('chatBox');
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${isUser ? 'msg-user' : 'msg-ai'}`;
@@ -331,6 +348,11 @@ function appendMessage(sender, text, isUser) {
     // MathJax 수식 동적 렌더링
     if (window.MathJax) {
         MathJax.typesetPromise([msgDiv]).catch((err) => console.log('MathJax 렌더링 오류:', err));
+    }
+
+    if (!isRestore) {
+        chatHistoryForStorage.push({ sender, text, isUser });
+        saveSimulationState();
     }
 }
 
@@ -543,6 +565,7 @@ async function trackCompetencies(targetSpeaker) {
         updateChartData();
 
         renderTable();
+        saveSimulationState(); // 💡 캐시에 역량 점수 업데이트
         console.log("📊 [System] 역량 보드 업데이트 완료");
     } catch (e) {
         console.error("🚨 역량 분석 오류:", e);
@@ -1013,6 +1036,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmSaveBtn = document.getElementById('confirmSaveBtn');
     if (confirmSaveBtn) confirmSaveBtn.addEventListener('click', executeSaveToDB);
 
+    // 💡 캐시 초기화(리셋) 버튼 로직
+    const resetSimBtn = document.getElementById('resetSimBtn');
+    if (resetSimBtn) {
+        resetSimBtn.addEventListener('click', () => {
+            if (confirm("진행 중인 모든 대화를 지우고 처음부터 다시 시작하시겠습니까?")) {
+                localStorage.removeItem('tobagi_sim_state');
+                location.reload();
+            }
+        });
+    }
+
     initChart(); // 💡 앱 시작 시 차트 그리기
 
     // 🔥 Firebase에서 문제 불러오기 및 앱 초기 실행
@@ -1050,6 +1084,7 @@ async function loadProblemsAndInit() {
         taskSelect.addEventListener('change', (e) => {
             if (confirm("과제를 변경하면 진행 중인 대화가 모두 초기화되고 새로 시작됩니다. 변경하시겠습니까?")) {
                 localStorage.setItem('selected_task', e.target.value);
+                localStorage.removeItem('tobagi_sim_state'); // 💡 문제 변경 시 캐시 초기화
                 location.reload();
             } else {
                 e.target.value = currentTaskId;
@@ -1058,6 +1093,42 @@ async function loadProblemsAndInit() {
     }
     const taskCardContent = document.getElementById('taskCardContent');
     if (taskCardContent) taskCardContent.innerHTML = currentTask.uiHtml;
+
+    // 💡 캐시 복원 로직
+    const savedStateStr = localStorage.getItem('tobagi_sim_state');
+    if (savedStateStr) {
+        try {
+            const savedState = JSON.parse(savedStateStr);
+            currentScores = savedState.currentScores || currentScores;
+            understandingLevels = savedState.understandingLevels || understandingLevels;
+            understandingHistory = savedState.understandingHistory || understandingHistory;
+            scoreHistory = savedState.scoreHistory || scoreHistory;
+            turnCount = savedState.turnCount || turnCount;
+            chartLabels = savedState.chartLabels || chartLabels;
+            chatHistoryForStorage = savedState.chatHistoryForStorage || [];
+
+            const chatBox = document.getElementById('chatBox');
+            if (chatBox) chatBox.innerHTML = ''; 
+            
+            chatHistoryForStorage.forEach(msg => {
+                appendMessage(msg.sender, msg.text, msg.isUser, true);
+            });
+
+            renderTable();
+            updateChartData();
+            console.log("💾 [System] 이전 대화 캐시 복원 완료");
+            
+            if (chatHistoryForStorage.length > 0) {
+                const lastMsg = chatHistoryForStorage[chatHistoryForStorage.length - 1];
+                console.log(`🔄 [System] 캐시 복원 후 '${lastMsg.sender}' 턴부터 대화 체인 재가동...`);
+                setTimeout(() => runAiTurnChain(lastMsg.sender, lastMsg.text), 4000);
+            }
+            return; // 기존 저장된 상태가 있다면 초기 발화 스킵
+        } catch (e) {
+            console.error("캐시 복원 실패:", e);
+            localStorage.removeItem('tobagi_sim_state');
+        }
+    }
 
     // 💡 문제 데이터가 준비된 후 교사의 첫 인사 및 과제 제시로 대화 시작
     startInitialTeacherTurn();
