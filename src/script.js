@@ -1237,6 +1237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (resetSimBtn) {
         resetSimBtn.addEventListener('click', () => {
             if (confirm("진행 중인 모든 대화를 지우고 처음부터 다시 시작하시겠습니까?")) {
+                isSimulationStopped = true; // 💡 초기화 진행 시 백그라운드 저장 강제 중단
                 localStorage.removeItem('tobagi_sim_state');
                 location.reload();
             }
@@ -1306,6 +1307,7 @@ async function loadProblemsAndInit() {
         taskSelect.value = currentTaskId;
         taskSelect.addEventListener('change', (e) => {
             if (confirm("과제를 변경하면 진행 중인 대화가 모두 초기화되고 새로 시작됩니다. 변경하시겠습니까?")) {
+                isSimulationStopped = true; // 💡 과제 변경 시 백그라운드 저장 강제 중단
                 localStorage.setItem('selected_task', e.target.value);
                 localStorage.removeItem('tobagi_sim_state'); // 💡 문제 변경 시 캐시 초기화
                 location.reload();
