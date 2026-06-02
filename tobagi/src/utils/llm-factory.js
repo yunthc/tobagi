@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중등 수학 모둠 학습 시뮬레이터 (Gemma 4 로컬)</title>
+    <link rel="stylesheet" href="/src/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div class="task-section">
+            <h3>📝 현재 풀이 중인 과제</h3>
+            <div class="task-card">
+                <p><strong>[과제 1]</strong> 2~20까지의 수를 분류한 규칙 찾기</p>
+                <p>1그룹: 2,3,5,7,11,13,17,19</p>
+                <p>2그룹: 4,6,8,9,10,12,14,15,16,18,20</p>
+                <p><strong>[과제 2]</strong> 20~30까지의 수를 위 규칙에 맞춰 분류하기</p>
+                <p><strong>[과제 3]</strong> 참/거짓 판별 (3-1: 소수는 모두 홀수다 / 3-2: 5의 배수는 모두 합성수다)</p>
+            </div>
+        </div>
+
+        <h3>📊 실시간 역량 추적 보드</h3>
+        <p class="dashboard-desc">모둠원들의 대화 턴이 종료될 때마다 인지적·정의적 역량을 분석합니다. (1~5점)</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>모둠원</th>
+                    <th>과제 수행</th>
+                    <th>의사소통</th>
+                    <th>수학적 추론</th>
+                    <th>협력적 해결</th>
+                    <th>자기효능감</th>
+                </tr>
+            </thead>
+            <tbody id="scoreTableBody">
+                </tbody>
+        </table>
+        
+        <div class="chart-area">
+            <h4 style="margin-top: 0; color: #2C3E50; text-align: center; margin-bottom: 10px;">📈 모둠원 이해도 변화 추이</h4>
+            <canvas id="understandingChart" height="100"></canvas>
+        </div>
+
+        <div style="margin-top: 15px; text-align: right;">
+            <a href="persona.html" style="color: var(--primary-color); font-weight: bold; text-decoration: none;">⚙️ 모둠원 페르소나(성향) 커스텀하기</a>
+        </div>
+
+        <div class="api-settings">
+            <label for="geminiKey">🔑 Gemini API Key (역량 평가용):</label>
+            <input type="password" id="geminiKey" placeholder="AI 역량 분석을 위해 API 키를 입력하세요">
+        </div>
+        
+        <!-- 모델 선택 UI -->
+        <div class="api-model-select" style="margin-top:8px;">
+            <label for="modelSelect">🧠 AI 모델 선택:</label>
+            <select id="modelSelect" style="margin-left:8px;">
+                <option value="ollama">Local Gemma 4 (Ollama - 기본)</option>
+                <option value="gemini">Gemini 3.1 Flash Lite (API Key)</option>
+            </select>
+            <small id="modelHelp" style="display:block; margin-top:6px; color:#666;">
+                Gemini 선택 시 위의 API Key 입력란을 사용합니다. 선택은 로컬 스토리지에 저장됩니다.
+            </small>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>🧮 수학 1조 모둠방 (주제: 소수와 합성수)</span>
+            <button id="timeBtn" class="btn-time">⏱ 3분 경과 (서연 강제 호출)</button>
+        </div>
+        <div class="chat-box" id="chatBox">
+            <div class="message msg-ai">
+                <div class="speaker-name">시스템</div>
+                안녕하세요! 오늘 과제는 '소수와 합성수'입니다. 다들 자유롭게 의견을 나누며 과제를 해결해 보세요. 사용자가 먼저 말을 걸어 모둠 활동을 시작해 주세요!
+            </div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="모둠원들에게 보낼 메시지를 입력하세요...">
+            <button id="sendBtn">전송</button>
+        </div>
+    </div>
+
+    <script type="module" src="/src/script.js"></script>
+</body>
+</html>

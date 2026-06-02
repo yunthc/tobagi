@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시뮬레이션 기록 열람</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body class="persona-body">
+    <div style="margin-bottom: 20px; width: 100%; max-width: 1200px; padding-top: 20px;">
+        <a href="index.html" class="back-link">⬅ 시뮬레이터로 돌아가기</a>
+    </div>
+    
+    <div style="width: 100%; max-width: 1200px; background: var(--box-bg); padding: 30px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.08);">
+        <h2 style="margin-top: 0; color: #2C3E50;">📂 시뮬레이션 저장 기록</h2>
+        <p style="color: #7F8C8D; margin-bottom: 20px;">Firebase DB에 저장된 과거 시뮬레이션 결과 목록입니다.</p>
+        
+        <table style="width: 100%; text-align: center; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">저장 일시</th>
+                    <th style="width: 35%;">제목</th>
+                    <th style="width: 15%;">저장자</th>
+                    <th style="width: 10%;">총 턴 수</th>
+                    <th style="width: 15%;">상세 보기</th>
+                </tr>
+            </thead>
+            <tbody id="recordsTableBody">
+                <tr><td colspan="5" style="padding: 30px;">데이터를 불러오는 중입니다...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script type="module" src="/src/records.js"></script>
+</body>
+</html>

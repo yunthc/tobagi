@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 학생 페르소나 설정</title>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body class="persona-body">
+<div style="margin-bottom: 20px; width: 100%; max-width: 1200px; padding-top: 20px;">
+    <a href="index.html" class="back-link">⬅ 시뮬레이터로 돌아가기</a>
+</div>
+
+<div class="persona-container">
+    <!-- 설문 조사 섹션 -->
+    <div class="survey-section">
+        <h1>학생 정의적 영역 설문</h1>
+        <p id="surveyDesc" style="color: #7f8c8d; margin-bottom: 20px;">각 문항에 대해 1점(아니다)부터 3점(그렇다)까지 선택하여 학생의 성향을 디자인하세요.</p>
+        
+        <div class="character-selector">
+            <label for="targetCharacter"><strong>대상 모둠원 선택: </strong></label>
+            <select id="targetCharacter">
+                <option value="민준">민준 (기본: 오개념, 고집)</option>
+                <option value="서연">서연 (기본: 모범생, 조력자)</option>
+                <option value="연우">연우 (기본: 하위권, 의존적)</option>
+                <option value="교사">교사 (기본: 친절한 안내자)</option>
+            </select>
+        </div>
+
+        <div class="understanding-selector" id="understandingWrapper">
+            <label for="understandingSlider"><strong>초기 개념 이해도: <span id="understandingValue">50</span>%</strong></label>
+            <input type="range" id="understandingSlider" min="0" max="100" value="50">
+            <p style="font-size: 0.85rem; color: #7f8c8d; margin-top: 5px;">0%에 가까울수록 오개념을 고집하고, 100%에 가까울수록 정답을 완벽히 이해한 상태로 시작합니다.</p>
+        </div>
+
+        <div id="questionsContainer"></div>
+    </div>
+
+    <!-- 생성된 프롬프트 미리보기 섹션 -->
+    <div class="preview-section">
+        <h2>페르소나 프롬프트 미리보기</h2>
+        <p style="color: #7f8c8d; margin-bottom: 20px;">설문 결과에 따라 실시간으로 조합된 시스템 프롬프트입니다.</p>
+        <textarea id="promptPreview" class="preview-box" readonly></textarea>
+        <button class="btn-random" id="btnRandom">랜덤으로 성향 설정하기 🎲</button>
+        <button class="btn-apply" id="btnSave">설정 저장 및 적용하기</button>
+    </div>
+</div>
+
+<script src="/src/persona.js"></script>
+
+</body>
+</html>
