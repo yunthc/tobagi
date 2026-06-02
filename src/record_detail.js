@@ -96,6 +96,11 @@ function renderDetail(data) {
         msgDiv.innerHTML = isUser ? log.text : `<div class="speaker-name">${log.speaker}</div>${log.text}`;
         chatBox.appendChild(msgDiv);
     });
+    
+    // MathJax 수식 동적 렌더링
+    if (window.MathJax) {
+        MathJax.typesetPromise([chatBox]).catch((err) => console.log('MathJax 렌더링 오류:', err));
+    }
 
     // 3. 차트 6종 초기 프레임 설정
     const chartsGrid = document.getElementById('chartsGrid');

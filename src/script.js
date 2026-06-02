@@ -327,6 +327,11 @@ function appendMessage(sender, text, isUser) {
     else msgDiv.innerHTML = text;
     chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
+
+    // MathJax 수식 동적 렌더링
+    if (window.MathJax) {
+        MathJax.typesetPromise([msgDiv]).catch((err) => console.log('MathJax 렌더링 오류:', err));
+    }
 }
 
 // ==== 💡 타이핑 인디케이터 UI 함수 ====
