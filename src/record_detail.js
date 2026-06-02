@@ -25,6 +25,7 @@ let chatLogsData = [];
 let fullUHistory = null;
 let fullSHistory = null;
 let chartInstances = [];
+let activeStudents = [];
 
 async function loadDetail() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -75,6 +76,8 @@ function renderDetail(data) {
     chatLogsData = data.chatLogs || [];
     totalSteps = chatLogsData.length;
     currentStep = totalSteps; // 기본적으로 전체 기록을 표시
+    
+    activeStudents = Object.keys(data.finalScores || {}).filter(k => k !== "교사");
 
     // 2. 채팅 말풍선 미리 생성해두기 (CSS display로 토글)
     const chatBox = document.getElementById('recordChatBox');
@@ -115,7 +118,7 @@ function renderDetail(data) {
 
     chartConfigs.forEach(cfg => {
         const ctx = document.getElementById(cfg.id).getContext('2d');
-        const datasets = ["민준", "서연", "연우"].map(student => ({
+        const datasets = activeStudents.map(student => ({
             label: student,
             data: [], // updateViewToStep에서 채움
             borderColor: colors[student],
@@ -145,7 +148,7 @@ function updateViewToStep(step) {
         const msgDiv = document.getElementById(`msg-${i}`);
         if (i < step) {
             msgDiv.style.display = 'block';
-            if (["민준", "서연", "연우"].includes(chatLogsData[i].speaker)) {
+        if (activeStudents.includes(chatLogsData[i].speaker)) {
                 currentHIndex++;
             }
         } else {
@@ -162,7 +165,7 @@ function updateViewToStep(step) {
     // 3. 역량 점수 테이블 업데이트
     const tbody = document.getElementById('recordScoreTableBody');
     tbody.innerHTML = '';
-    ["민준", "서연", "연우"].forEach(name => {
+    activeStudents.forEach(name => {
         let uData = fullUHistory && fullUHistory[name] ? fullUHistory[name] : [0];
         let sData = fullSHistory && fullSHistory[name] ? fullSHistory[name] : [[1,1,1,1,1]];
         
@@ -197,7 +200,7 @@ function updateViewToStep(step) {
     chartInstances.forEach(({chart, cfg}) => {
         chart.data.labels = labels;
         chart.data.datasets.forEach((ds, dsIdx) => {
-            const student = ["민준", "서연", "연우"][dsIdx];
+            const student = activeStudents[dsIdx];
             if (cfg.type === 'u') {
                 let uData = fullUHistory && fullUHistory[student] ? fullUHistory[student] : [0];
                 ds.data = uData.slice(0, currentHIndex + 1);

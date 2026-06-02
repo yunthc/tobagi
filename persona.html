@@ -47,6 +47,12 @@
 </div>
 
 <script type="module" src="/src/persona.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const countSelect = document.getElementById('studentCountSelect');
+        if (countSelect) countSelect.value = localStorage.getItem('student_count') || '3';
+    });
+</script>
 
 </body>
 </html>

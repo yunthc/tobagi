@@ -54,36 +54,29 @@ const TEACHER_PROMPT_BASE = `[대화적 교수법 5가지 원칙]
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// 모둠원 역량 상태 상태 점수 (초기값 1.0 - 역량 최하점)
-let currentScores = {
-    "민준": [1.0, 1.0, 1.0, 1.0, 1.0],
-    "서연": [1.0, 1.0, 1.0, 1.0, 1.0],
-    "연우": [1.0, 1.0, 1.0, 1.0, 1.0]
-};
+// 모둠원 수 설정 (1~3명)
+const STUDENT_COUNT = parseInt(localStorage.getItem('student_count') || '3', 10);
+const ACTIVE_STUDENTS = ["민준", "서연", "연우"].slice(0, STUDENT_COUNT);
 
-// 👾 이해도(Understanding) 상태 (초기값 0: 전혀 이해 못함, 100: 완벽히 이해함)
-let understandingLevels = {
-    "민준": localStorage.getItem("persona_understanding_민준") !== null ? parseInt(localStorage.getItem("persona_understanding_민준")) : 30,
-    "서연": localStorage.getItem("persona_understanding_서연") !== null ? parseInt(localStorage.getItem("persona_understanding_서연")) : 70, 
-    "연우": localStorage.getItem("persona_understanding_연우") !== null ? parseInt(localStorage.getItem("persona_understanding_연우")) : 0
-};
+// 모둠원 역량 상태 상태 점수 (초기값 1.0 - 역량 최하점)
+let currentScores = {};
+let understandingLevels = {};
+let understandingHistory = {};
+let scoreHistory = {};
+
+ACTIVE_STUDENTS.forEach(name => {
+    currentScores[name] = [1.0, 1.0, 1.0, 1.0, 1.0];
+    let defaultLevel = (name === "서연") ? 70 : ((name === "민준") ? 30 : 0);
+    understandingLevels[name] = localStorage.getItem(`persona_understanding_${name}`) !== null ? parseInt(localStorage.getItem(`persona_understanding_${name}`)) : defaultLevel;
+    understandingHistory[name] = [understandingLevels[name]];
+    scoreHistory[name] = [[...currentScores[name]]];
+});
 
 // 📈 이해도 변화 추적용 데이터 기록
 let turnCount = 0;
 let chartLabels = ["시작"];
-let understandingHistory = {
-    "민준": [understandingLevels["민준"]],
-    "서연": [understandingLevels["서연"]],
-    "연우": [understandingLevels["연우"]]
-};
 let understandingChart = null;
 
-// 📈 역량 점수 변화 추적용 데이터 기록
-let scoreHistory = {
-    "민준": [[...currentScores["민준"]]],
-    "서연": [[...currentScores["서연"]]],
-    "연우": [[...currentScores["연우"]]]
-};
 
 // 프롬프트 가이드라인 (대환장 중학생 모드 반영)
 function getSystemPrompt(roleName) {
@@ -91,7 +84,7 @@ function getSystemPrompt(roleName) {
     
     // 1. 공통 기본 설정 분기 (학생 vs 교사)
     if (roleName === "교사") {
-        prompt = `당신의 이름은 '교사'이며, 중학교 1학년 수학 교사로서 모둠 방 대화에 참여하고 있습니다. 당신은 '대화적 교수법(Dialogic Teaching)'을 실천하는 교사입니다. 학생들(민준, 서연, 연우)의 대화가 정체되거나, 현재 수행중인 과제를 해결했다고 판단될 때 자연스럽게 개입하세요. 반말이 아닌 친절하고 부드러운 존댓말(예: ~해요, ~할까요?)을 1~2문장으로 짧게 사용하세요.\n\n${TEACHER_PROMPT_BASE}\n\n다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨운영 지침: 당신은 과제 진행자입니다. 과제1부터 과제2까지 한 번에 하나씩 순차적으로 제시하세요. 학생들이 현재 과제의 핵심 정답을 어느 정도 도출하고 합의했다면, 불필요하게 모든 숫자를 검산시키거나 완벽한 증명을 요구하지 말고 즉시 칭찬하며 다음 과제로 자연스럽게 넘어가세요. 만약 과제2까지 모두 성공적으로 완료되었다면 반드시 "오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 대화를 마무리하세요. 또한, 교사가 먼저 "A는 1/2이고 B, C는 1/4이야"라고 정답을 알려주지 말고, "A로 가는 길과 B, C로 가는 길은 갈림길을 몇 번 거칠까요?"와 같이 수형도를 떠올릴 수 있는 힌트를 통해 스스로 발견하게 유도하세요.]\n`;
+        prompt = `당신의 이름은 '교사'이며, 중학교 1학년 수학 교사로서 모둠 방 대화에 참여하고 있습니다. 당신은 '대화적 교수법(Dialogic Teaching)'을 실천하는 교사입니다. 학생들(${ACTIVE_STUDENTS.join(", ")})의 대화가 정체되거나, 현재 수행중인 과제를 해결했다고 판단될 때 자연스럽게 개입하세요. 반말이 아닌 친절하고 부드러운 존댓말(예: ~해요, ~할까요?)을 1~2문장으로 짧게 사용하세요.\n\n${TEACHER_PROMPT_BASE}\n\n다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨운영 지침: 당신은 과제 진행자입니다. 과제1부터 과제2까지 한 번에 하나씩 순차적으로 제시하세요. 학생들이 현재 과제의 핵심 정답을 어느 정도 도출하고 합의했다면, 불필요하게 모든 숫자를 검산시키거나 완벽한 증명을 요구하지 말고 즉시 칭찬하며 다음 과제로 자연스럽게 넘어가세요. 만약 과제2까지 모두 성공적으로 완료되었다면 반드시 "오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 대화를 마무리하세요. 또한, 교사가 먼저 "A는 1/2이고 B, C는 1/4이야"라고 정답을 알려주지 말고, "A로 가는 길과 B, C로 가는 길은 갈림길을 몇 번 거칠까요?"와 같이 수형도를 떠올릴 수 있는 힌트를 통해 스스로 발견하게 유도하세요.]\n`;
     } else {
         prompt = `당신의 이름은 '${roleName}'이며, 중학교 1학년 학생으로서 수학 모둠 방 대화에 참여하고 있습니다. 완벽한 AI 티를 내지 말고, 무조건 1~2문장의 짧은 구어체 반말(예: ㅋㅋ, 응 맞아, 아 몰라)을 쓰세요. 다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨학생 지침: 교사나 시스템이 제시한 '현재 진행 중인 과제'에만 집중하세요. 스포일러는 금지입니다. ★가장 중요한 규칙: 절대 친구의 말을 앵무새처럼 반복하거나 "해보자", "맞아"라고 동의만 하며 턴을 낭비하지 마세요. 발화 시 반드시 본인이 직접 구체적인 숫자를 계산해서 말하거나(예: "결과가 A, B, C 세 가지니까 A에 도착할 확률은 무조건 1/3 아닐까?"), 새로운 아이디어를 던져서 대화를 무조건 한 단계 진전시키세요.]\n`;
         if (roleName === "민준") prompt += "당신은 수학을 좋아하지만 가끔 오개념에 빠지는 학생입니다. 정답을 먼저 말하지 말고 헤매는 모습을 보이며, 처음엔 틀린 논리를 고집하다가도 친구들의 설명에 설득당하면 금방 인정합니다.";
@@ -212,33 +205,23 @@ renderTable();
 // 차트 초기화 함수
 function initChart() {
     const ctx = document.getElementById('understandingChart').getContext('2d');
+    const datasets = [];
+    const colors = { "민준": "#FF9800", "서연": "#4CAF50", "연우": "#2196F3" };
+    ACTIVE_STUDENTS.forEach(name => {
+        datasets.push({
+            label: name,
+            data: understandingHistory[name],
+            borderColor: colors[name],
+            backgroundColor: colors[name],
+            tension: 0.3
+        });
+    });
+
     understandingChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: chartLabels,
-            datasets: [
-                {
-                    label: '민준',
-                    data: understandingHistory["민준"],
-                    borderColor: '#FF9800', // 노란색(오렌지)
-                    backgroundColor: '#FF9800',
-                    tension: 0.3
-                },
-                {
-                    label: '서연',
-                    data: understandingHistory["서연"],
-                    borderColor: '#4CAF50', // 초록색
-                    backgroundColor: '#4CAF50',
-                    tension: 0.3
-                },
-                {
-                    label: '연우',
-                    data: understandingHistory["연우"],
-                    borderColor: '#2196F3', // 파란색
-                    backgroundColor: '#2196F3',
-                    tension: 0.3
-                }
-            ]
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -253,20 +236,22 @@ function updateChartData() {
     if (!understandingChart) return;
     const metric = document.getElementById('chartMetricSelect').value;
     
-    if (metric === "understanding") {
-        understandingChart.data.datasets[0].data = understandingHistory["민준"];
-        understandingChart.data.datasets[1].data = understandingHistory["서연"];
-        understandingChart.data.datasets[2].data = understandingHistory["연우"];
-        understandingChart.options.scales.y.min = 0;
-        understandingChart.options.scales.y.max = 100;
-    } else {
-        const idx = parseInt(metric);
-        understandingChart.data.datasets[0].data = scoreHistory["민준"].map(arr => arr[idx]);
-        understandingChart.data.datasets[1].data = scoreHistory["서연"].map(arr => arr[idx]);
-        understandingChart.data.datasets[2].data = scoreHistory["연우"].map(arr => arr[idx]);
-        understandingChart.options.scales.y.min = 1.0;
-        understandingChart.options.scales.y.max = 5.0;
-    }
+    ACTIVE_STUDENTS.forEach((name, index) => {
+        if (metric === "understanding") {
+            understandingChart.data.datasets[index].data = understandingHistory[name];
+            if (index === 0) {
+                understandingChart.options.scales.y.min = 0;
+                understandingChart.options.scales.y.max = 100;
+            }
+        } else {
+            const metricIdx = parseInt(metric);
+            understandingChart.data.datasets[index].data = scoreHistory[name].map(arr => arr[metricIdx]);
+            if (index === 0) {
+                understandingChart.options.scales.y.min = 1.0;
+                understandingChart.options.scales.y.max = 5.0;
+            }
+        }
+    });
     understandingChart.update();
 }
 
@@ -512,13 +497,10 @@ async function trackCompetencies(targetSpeaker) {
         
         turnCount++;
         chartLabels.push(`${turnCount}턴`);
-        understandingHistory["민준"].push(understandingLevels["민준"]);
-        understandingHistory["서연"].push(understandingLevels["서연"]);
-        understandingHistory["연우"].push(understandingLevels["연우"]);
-        
-        scoreHistory["민준"].push([...currentScores["민준"]]);
-        scoreHistory["서연"].push([...currentScores["서연"]]);
-        scoreHistory["연우"].push([...currentScores["연우"]]);
+        ACTIVE_STUDENTS.forEach(name => {
+            understandingHistory[name].push(understandingLevels[name]);
+            scoreHistory[name].push([...currentScores[name]]);
+        });
         updateChartData();
 
         renderTable();
@@ -678,19 +660,21 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         keepGoing = false;
 
         // 💡 텍스트를 분석하여 불린 이름 확인 및 확률 동적 조정
-        const callMinjun = currentMessageText.includes("민준");
-        const callSeoyeon = currentMessageText.includes("서연");
-        const callYeonwoo = currentMessageText.includes("연우");
+        const callMinjun = ACTIVE_STUDENTS.includes("민준") && currentMessageText.includes("민준");
+        const callSeoyeon = ACTIVE_STUDENTS.includes("서연") && currentMessageText.includes("서연");
+        const callYeonwoo = ACTIVE_STUDENTS.includes("연우") && currentMessageText.includes("연우");
         
-        let probMinjun = 0.34, probSeoyeon = 0.60, probYeonwoo = 0.80; // 기본 확률
+        let probMinjun = ACTIVE_STUDENTS.includes("민준") ? 0.34 : 0;
+        let probSeoyeon = ACTIVE_STUDENTS.includes("서연") ? 0.60 : 0;
+        let probYeonwoo = ACTIVE_STUDENTS.includes("연우") ? 0.80 : 0; // 기본 확률
         if (callMinjun || callSeoyeon || callYeonwoo) {
-            probMinjun = callMinjun ? 0.90 : 0.10;
-            probSeoyeon = callSeoyeon ? 0.90 : 0.10;
-            probYeonwoo = callYeonwoo ? 0.90 : 0.10;
+            probMinjun = callMinjun ? 0.90 : (ACTIVE_STUDENTS.includes("민준") ? 0.10 : 0);
+            probSeoyeon = callSeoyeon ? 0.90 : (ACTIVE_STUDENTS.includes("서연") ? 0.10 : 0);
+            probYeonwoo = callYeonwoo ? 0.90 : (ACTIVE_STUDENTS.includes("연우") ? 0.10 : 0);
         }
 
         // 💡 [추가] 4턴 이상 소외된 학생 강제 발화 로직 (교사 제외)
-        const students = ["민준", "서연", "연우"];
+        const students = ACTIVE_STUDENTS;
         const studentMessages = Array.from(document.querySelectorAll('.message:not(.typing-indicator)'))
             .map(msg => msg.querySelector('.speaker-name')?.innerText)
             .filter(name => students.includes(name)); // 교사 등 다른 화자 제외
@@ -827,13 +811,14 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         await runAiTurnChain("교사", reply);
     } else {
         await sleep(18000);
-        console.log(`👩 [System] 교사 발화 후 정체, 조장인 '서연'이 총대 메고 답변 강제!`);
-        const reply = await callOllama("서연");
-        appendMessage("서연", reply, false);
-        await trackCompetencies("서연"); 
+        const backupStudent = ACTIVE_STUDENTS.includes("서연") ? "서연" : ACTIVE_STUDENTS[0];
+        console.log(`👩 [System] 교사 발화 후 정체, '${backupStudent}'이(가) 총대 메고 답변 강제!`);
+        const reply = await callOllama(backupStudent);
+        appendMessage(backupStudent, reply, false);
+        await trackCompetencies(backupStudent); 
         
         // 서연이가 받아쳤으니 다시 체인 가동
-        await runAiTurnChain("서연", reply);
+        await runAiTurnChain(backupStudent, reply);
     }
 }
 
@@ -901,7 +886,7 @@ async function executeSaveToDB() {
         
         // 🔥 학생 및 교사의 커스텀 페르소나 설정 수집
         const customPersonas = {};
-        const roles = ["민준", "서연", "연우", "교사"];
+        const roles = [...ACTIVE_STUDENTS, "교사"];
         roles.forEach(role => {
             const prompt = localStorage.getItem(`persona_prompt_${role}`);
             const scoresStr = localStorage.getItem(`persona_scores_${role}`);
