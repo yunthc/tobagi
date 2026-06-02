@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>문제 은행 저장 (관리자)</title>
+    <link rel="stylesheet" href="/src/style.css">
+    <style>
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 6px; color: #2C3E50; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #CFD8DC; border-radius: 6px; font-size: 0.95rem; box-sizing: border-box; font-family: inherit; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .required { color: #E74C3C; }
+    </style>
+</head>
+<body class="persona-body">
+<div style="margin-bottom: 20px; width: 100%; max-width: 800px; padding-top: 20px;">
+    <a href="index.html" class="back-link">⬅ 시뮬레이터로 돌아가기</a>
+</div>
+
+<div class="survey-section" style="max-width: 800px; width: 100%;">
+    <h1>📝 신규 문제 DB 저장하기</h1>
+    <p style="color: #7f8c8d; margin-bottom: 25px;">입력한 문제는 Firebase DB에 저장되며, 시뮬레이터 화면의 '현재 풀이 중인 과제' 목록에 즉시 추가됩니다.</p>
+    
+    <div class="form-group">
+        <label>과제 ID <span class="required">*</span> (영문/숫자, 예: task3)</label>
+        <input type="text" id="p_id" placeholder="task3" required>
+    </div>
+    <div class="form-group">
+        <label>문제 제목 <span class="required">*</span></label>
+        <input type="text" id="p_title" placeholder="예: 일차방정식의 활용 - 소금물" required>
+    </div>
+    <div class="form-group">
+        <label>수업 배경 (학생들의 현재 수준 및 오개념) <span class="required">*</span></label>
+        <textarea id="p_background" placeholder="예: 학생들은 농도 공식을 외우고 있으나, 소금의 양이 보존된다는 개념을 헷갈려 합니다." required></textarea>
+    </div>
+    <div class="form-group">
+        <label>제시문 (문제 상황 텍스트) <span class="required">*</span></label>
+        <textarea id="p_content" placeholder="예: 10%의 소금물 200g에 물을 더 넣어 8%의 소금물을 만들려고 합니다." required></textarea>
+    </div>
+    <div class="form-group">
+        <label>과제 1 목표 <span class="required">*</span></label>
+        <input type="text" id="p_goal1" placeholder="예: 물을 넣기 전과 후, 변하지 않는 것이 무엇인지 토론하기" required>
+    </div>
+    <div class="form-group">
+        <label>과제 2 목표 (추가 목표, 없으면 공란)</label>
+        <input type="text" id="p_goal2" placeholder="예: 방정식을 세워 더 넣어야 할 물의 양 구하기">
+    </div>
+    <div class="form-group">
+        <label>교사 힌트 가이드 (AI 교사 프롬프트) <span class="required">*</span></label>
+        <textarea id="p_teacherHint" placeholder="예: 교사가 먼저 식을 세워주지 말고, '물을 추가해도 소금의 양은 변할까요?'와 같은 발문으로 유도하세요." required></textarea>
+    </div>
+    <div class="form-group">
+        <label>교사 초기 발화 (수업 첫인사) <span class="required">*</span></label>
+        <textarea id="p_teacherInit" placeholder="예: 얘들아 안녕! 오늘은 소금물 농도 문제를 같이 탐구해 볼 거야. 화면에 띄운 문제를 볼까?" required></textarea>
+    </div>
+
+    <button id="saveProblemBtn" class="btn-apply" style="margin-top: 20px;">Firebase DB에 저장하기</button>
+</div>
+
+<script type="module" src="/src/problem_admin.js"></script>
+</body>
+</html>

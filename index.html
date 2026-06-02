@@ -11,13 +11,15 @@
 
     <div class="dashboard-container">
         <div class="task-section">
-            <h3>📝 현재 풀이 중인 과제</h3>
-            <div class="task-card">
-                <p><strong>[문제 상황]</strong> 입구 P에서 공을 떨어뜨렸을 때 갈림길을 거쳐 A, B, C에 도착하는 장치</p>
-                <p>- 첫 번째 갈림길: 왼쪽(A 도착), 오른쪽(두 번째 갈림길로)</p>
-                <p>- 두 번째 갈림길: 왼쪽(B 도착), 오른쪽(C 도착)</p>
-                <p><strong>[과제 1]</strong> A, B, C에 도착할 확률이 모두 같은지 토론하기</p>
-                <p><strong>[과제 2]</strong> 공이 위치 B에 도착할 확률 구하기</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0;">📝 현재 풀이 중인 과제</h3>
+                <select id="taskSelect" style="padding: 6px; font-size: 0.9rem; border-radius: 6px; border: 1px solid #CFD8DC; outline: none; background-color: #fff; cursor: pointer;">
+                    <option value="task1">확률의 계산 (경로 확률)</option>
+                    <option value="task2">일차방정식 활용 (거속시)</option>
+                </select>
+            </div>
+            <div class="task-card" id="taskCardContent">
+                <!-- script.js 에서 동적으로 렌더링 됩니다 -->
             </div>
         </div>
 
@@ -56,6 +58,7 @@
         <div style="margin-top: 15px; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
             <a href="records.html" class="btn-persona-link" style="color: #2C3E50; font-weight: bold; text-decoration: none;">📂 저장된 기록 열람</a>
             <a href="persona.html" class="btn-persona-link" style="color: var(--primary-color); font-weight: bold; text-decoration: none;">⚙️ 모둠원 페르소나(성향) 커스텀하기</a>
+            <a href="problem_admin.html" class="btn-persona-link" style="color: #9B59B6; font-weight: bold; text-decoration: none;">📝 문제 저장 페이지</a>
         </div>
 
         <div class="api-settings">

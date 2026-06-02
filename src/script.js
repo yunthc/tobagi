@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { initializeFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { initializeFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // ===== 🔥 Firebase 설정 =====
 // TODO: Firebase 콘솔(console.firebase.google.com)에서 프로젝트 생성 후 발급받은 설정값으로 변경하세요.
@@ -29,17 +29,51 @@ if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
 const OLLAMA_URL = "http://localhost:11434/api/generate";
 // const OLLAMA_URL = "https://gemini-3-1-flash-lite-dot-apis-sandbox.ey.r.appspot.com/generate";
 
-const TASK_INFO = `[수행 과제: 확률의 계산 - 경로에 따른 확률 구하기]
-🚨[수업 배경]: 학생들은 '경우의 수'와 '확률의 기본 개념'은 배웠으나, 각 결과가 일어날 가능성이 다를 때의 확률 계산(수형도 활용 등)은 헷갈려 하는 상태입니다.
-[제시문] 입구 P에 공을 넣으면 아래로 떨어지며 다음과 같은 경로를 거칩니다.
-1. 첫 번째 갈림길에서 관이 왼쪽과 오른쪽 두 갈래로 나뉩니다.
-2. 왼쪽 관으로 떨어지면 곧바로 위치 A에 도착합니다.
-3. 오른쪽 관으로 떨어지면 아래에서 두 번째 갈림길을 만나 다시 두 갈래로 나뉩니다.
-4. 두 번째 갈림길에서 왼쪽으로 떨어지면 위치 B에, 오른쪽으로 떨어지면 위치 C에 도착합니다.
-(단, 공이 모든 갈림길에서 양쪽 방향으로 떨어질 가능성은 같습니다.)
+// ===== 📚 문제 은행 (Local DB) =====
+const PROBLEM_DB = {
+    "task1": {
+        title: "확률의 계산 - 경로에 따른 확률",
+        background: "학생들은 '경우의 수'와 '확률의 기본 개념'은 배웠으나, 각 결과가 일어날 가능성이 다를 때의 확률 계산(수형도 활용 등)은 헷갈려 하는 상태입니다.",
+        content: "입구 P에 공을 넣으면 아래로 떨어지며 다음과 같은 경로를 거칩니다.\n1. 첫 번째 갈림길에서 관이 왼쪽과 오른쪽 두 갈래로 나뉩니다.\n2. 왼쪽 관으로 떨어지면 곧바로 위치 A에 도착합니다.\n3. 오른쪽 관으로 떨어지면 아래에서 두 번째 갈림길을 만나 다시 두 갈래로 나뉩니다.\n4. 두 번째 갈림길에서 왼쪽으로 떨어지면 위치 B에, 오른쪽으로 떨어지면 위치 C에 도착합니다.\n(단, 공이 모든 갈림길에서 양쪽 방향으로 떨어질 가능성은 같습니다.)",
+        goals: [
+            "위치 A, B, C에 공이 도착할 확률이 모두 같은지 토론하기",
+            "공이 위치 B에 도착할 확률 구하기"
+        ],
+        teacherHint: "교사가 먼저 'A는 1/2이고 B, C는 1/4이야'라고 정답을 알려주지 말고, 'A로 가는 길과 B, C로 가는 길은 갈림길을 몇 번 거칠까요?'와 같이 수형도를 떠올릴 수 있는 힌트를 통해 스스로 발견하게 유도하세요.",
+        uiHtml: `
+            <p><strong>[문제 상황]</strong> 입구 P에서 공을 떨어뜨렸을 때 갈림길을 거쳐 A, B, C에 도착하는 장치</p>
+            <p>- 첫 번째 갈림길: 왼쪽(A 도착), 오른쪽(두 번째 갈림길로)</p>
+            <p>- 두 번째 갈림길: 왼쪽(B 도착), 오른쪽(C 도착)</p>
+            <p><strong>[과제 1]</strong> A, B, C에 도착할 확률이 모두 같은지 토론하기</p>
+            <p><strong>[과제 2]</strong> 공이 위치 B에 도착할 확률 구하기</p>
+        `,
+        teacherInitialText: "얘들아 안녕! 오늘 우리가 탐구할 확률 문제를 화면에 띄워줄게. 입구 P에 공을 넣으면 갈림길을 거쳐 A, B, C 중 한 곳에 떨어지는 장치란다.<br>우리의 첫 번째 과제는 <b>위치 A, B, C에 공이 도착할 확률이 모두 같은지</b> 토론해 보는 거야. 어떻게 생각하니?"
+    },
+    "task2": {
+        title: "일차방정식의 활용 - 거속시",
+        background: "학생들은 일차방정식 풀이는 할 수 있지만, 문장제 문제(특히 거리, 속력, 시간)를 식으로 세우는 것을 매우 어려워합니다.",
+        content: "민준이가 집에서 학교까지 가는데, 시속 4km로 걸어가면 시속 12km로 자전거를 타고 가는 것보다 20분 늦게 도착한다고 합니다.",
+        goals: [
+            "거·속·시(거리, 속력, 시간) 관계를 파악하고 미지수 정하기",
+            "방정식을 세우고 집에서 학교까지의 거리 구하기"
+        ],
+        teacherHint: "교사가 먼저 식을 세워주지 말고, '시간은 어떻게 구할 수 있을까?', '단위가 시속이니까 20분은 몇 시간일까?'와 같은 질문으로 학생들이 스스로 미지수 x를 설정하고 식을 유도하도록 하세요.",
+        uiHtml: `
+            <p><strong>[문제 상황]</strong> 집에서 학교까지의 이동 수단에 따른 시간 차이</p>
+            <p>- 도보: 시속 4km</p>
+            <p>- 자전거: 시속 12km</p>
+            <p>- 조건: 걸어가면 자전거보다 20분 늦게 도착</p>
+            <p><strong>[과제 1]</strong> 거·속·시 관계를 파악하고 미지수 정하기</p>
+            <p><strong>[과제 2]</strong> 방정식을 세워 집에서 학교까지의 거리 구하기</p>
+        `,
+        teacherInitialText: "얘들아 안녕! 오늘은 실생활에서 자주 만나는 '거속시' 문제를 같이 풀어볼 거야.<br>민준이가 걸어갈 때랑 자전거 탈 때 20분 차이가 난다고 하네. <b>먼저 무엇을 미지수 x로 두면 좋을지</b> 같이 이야기해볼까?"
+    }
+};
 
-과제1) 위치 A, B, C에 공이 도착할 확률이 모두 같은지 토론하기
-과제2) 공이 위치 B에 도착할 확률 구하기`;
+const currentTaskId = localStorage.getItem('selected_task') || 'task1';
+let currentTask = PROBLEM_DB[currentTaskId] || PROBLEM_DB['task1'];
+
+let TASK_INFO = `[수행 과제: ${currentTask.title}]\n🚨[수업 배경]: ${currentTask.background}\n[제시문] ${currentTask.content}\n\n${currentTask.goals.map((g, i) => `과제${i+1}) ${g}`).join('\n')}`;
 
 // 👨‍🏫 대화적 교수법 원칙 상수 (교사 전용 지침)
 const TEACHER_PROMPT_BASE = `[대화적 교수법 5가지 원칙]
@@ -84,9 +118,9 @@ function getSystemPrompt(roleName) {
     
     // 1. 공통 기본 설정 분기 (학생 vs 교사)
     if (roleName === "교사") {
-        prompt = `당신의 이름은 '교사'이며, 중학교 1학년 수학 교사로서 모둠 방 대화에 참여하고 있습니다. 당신은 '대화적 교수법(Dialogic Teaching)'을 실천하는 교사입니다. 학생들(${ACTIVE_STUDENTS.join(", ")})의 대화가 정체되거나, 현재 수행중인 과제를 해결했다고 판단될 때 자연스럽게 개입하세요. 반말이 아닌 친절하고 부드러운 존댓말(예: ~해요, ~할까요?)을 1~2문장으로 짧게 사용하세요.\n\n${TEACHER_PROMPT_BASE}\n\n다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨운영 지침: 당신은 과제 진행자입니다. 과제1부터 과제2까지 한 번에 하나씩 순차적으로 제시하세요. 학생들이 현재 과제의 핵심 정답을 어느 정도 도출하고 합의했다면, 불필요하게 모든 숫자를 검산시키거나 완벽한 증명을 요구하지 말고 즉시 칭찬하며 다음 과제로 자연스럽게 넘어가세요. 만약 과제2까지 모두 성공적으로 완료되었다면 반드시 "오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 대화를 마무리하세요. 또한, 교사가 먼저 "A는 1/2이고 B, C는 1/4이야"라고 정답을 알려주지 말고, "A로 가는 길과 B, C로 가는 길은 갈림길을 몇 번 거칠까요?"와 같이 수형도를 떠올릴 수 있는 힌트를 통해 스스로 발견하게 유도하세요.]\n`;
+        prompt = `당신의 이름은 '교사'이며, 중학교 1학년 수학 교사로서 모둠 방 대화에 참여하고 있습니다. 당신은 '대화적 교수법(Dialogic Teaching)'을 실천하는 교사입니다. 학생들(${ACTIVE_STUDENTS.join(", ")})의 대화가 정체되거나, 현재 수행중인 과제를 해결했다고 판단될 때 자연스럽게 개입하세요. 반말이 아닌 친절하고 부드러운 존댓말(예: ~해요, ~할까요?)을 1~2문장으로 짧게 사용하세요.\n\n${TEACHER_PROMPT_BASE}\n\n다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨운영 지침: 당신은 과제 진행자입니다. 과제1부터 과제${currentTask.goals.length}까지 한 번에 하나씩 순차적으로 제시하세요. 학생들이 현재 과제의 핵심 정답을 어느 정도 도출하고 합의했다면, 불필요하게 모든 숫자를 검산시키거나 완벽한 증명을 요구하지 말고 즉시 칭찬하며 다음 과제로 자연스럽게 넘어가세요. 만약 과제${currentTask.goals.length}까지 모두 성공적으로 완료되었다면 반드시 "오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 대화를 마무리하세요. 또한, 교사가 먼저 정답을 알려주지 말고 다음과 같이 유도하세요. ${currentTask.teacherHint}]\n`;
     } else {
-        prompt = `당신의 이름은 '${roleName}'이며, 중학교 1학년 학생으로서 수학 모둠 방 대화에 참여하고 있습니다. 완벽한 AI 티를 내지 말고, 무조건 1~2문장의 짧은 구어체 반말(예: ㅋㅋ, 응 맞아, 아 몰라)을 쓰세요. 다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨학생 지침: 교사나 시스템이 제시한 '현재 진행 중인 과제'에만 집중하세요. 스포일러는 금지입니다. ★가장 중요한 규칙: 절대 친구의 말을 앵무새처럼 반복하거나 "해보자", "맞아"라고 동의만 하며 턴을 낭비하지 마세요. 발화 시 반드시 본인이 직접 구체적인 숫자를 계산해서 말하거나(예: "결과가 A, B, C 세 가지니까 A에 도착할 확률은 무조건 1/3 아닐까?"), 새로운 아이디어를 던져서 대화를 무조건 한 단계 진전시키세요.]\n`;
+        prompt = `당신의 이름은 '${roleName}'이며, 중학교 1학년 학생으로서 수학 모둠 방 대화에 참여하고 있습니다. 완벽한 AI 티를 내지 말고, 무조건 1~2문장의 짧은 구어체 반말(예: ㅋㅋ, 응 맞아, 아 몰라)을 쓰세요. 다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨학생 지침: 교사나 시스템이 제시한 '현재 진행 중인 과제'에만 집중하세요. 스포일러는 금지입니다. ★가장 중요한 규칙: 절대 친구의 말을 앵무새처럼 반복하거나 "해보자", "맞아"라고 동의만 하며 턴을 낭비하지 마세요. 발화 시 반드시 본인이 직접 구체적인 숫자를 계산해서 말하거나, 새로운 아이디어를 던져서 대화를 무조건 한 단계 진전시키세요.]\n`;
         if (roleName === "민준") prompt += "당신은 수학을 좋아하지만 가끔 오개념에 빠지는 학생입니다. 정답을 먼저 말하지 말고 헤매는 모습을 보이며, 처음엔 틀린 논리를 고집하다가도 친구들의 설명에 설득당하면 금방 인정합니다.";
         if (roleName === "서연") prompt += "당신은 모둠을 이끄는 적극적이고 다정한 모범생입니다. 혼자 정답을 다 말해버리기보다는, 친구들(특히 연우와 민준)이 스스로 깨달을 수 있도록 힌트와 좋은 질문을 던지며 부드럽게 이끌어주세요.";
         if (roleName === "연우") prompt += "당신은 수학을 어려워하여 엉뚱한 소리나 힌트 요구를 자주 하는 학생입니다. 정답을 먼저 말하지 말고 크게 헤매는 모습을 보이며, 친구들이 친절하게 알려주면 금방 깨닫고 기뻐하며 참여합니다.";
@@ -829,7 +863,7 @@ async function startInitialTeacherTurn() {
     if (chatBox) chatBox.innerHTML = ''; // HTML에 남아있을지 모르는 기존 시스템 안내 메시지 등 초기화
     
     // LLM이 시스템처럼 기계적으로 말하는 것을 방지하기 위해 자연스러운 첫 발화를 고정합니다.
-    const initialText = "얘들아 안녕! 오늘 우리가 탐구할 확률 문제를 화면에 띄워줄게. 입구 P에 공을 넣으면 갈림길을 거쳐 A, B, C 중 한 곳에 떨어지는 장치란다.<br>우리의 첫 번째 과제는 <b>위치 A, B, C에 공이 도착할 확률이 모두 같은지</b> 토론해 보는 거야. 어떻게 생각하니?";
+    const initialText = currentTask.teacherInitialText;
     appendMessage("교사", initialText, false);
     await runAiTurnChain("교사", initialText); 
 }
@@ -976,6 +1010,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initChart(); // 💡 앱 시작 시 차트 그리기
 
-    // 💡 교사의 첫 인사 및 과제 제시로 대화 시작
-    startInitialTeacherTurn();
+    // 🔥 Firebase에서 문제 불러오기 및 앱 초기 실행
+    loadProblemsAndInit();
 });
+
+async function loadProblemsAndInit() {
+    if (db) {
+        try {
+            console.log("🔥 [Firebase] 문제 은행 목록 불러오는 중...");
+            const querySnapshot = await getDocs(collection(db, "problems"));
+            querySnapshot.forEach(doc => {
+                PROBLEM_DB[doc.id] = doc.data();
+            });
+        } catch (e) {
+            console.error("🚨 [Firebase] 문제 목록 불러오기 실패:", e);
+        }
+    }
+
+    // 불러온 DB 데이터로 현재 과제 정보 다시 세팅
+    currentTask = PROBLEM_DB[currentTaskId] || PROBLEM_DB['task1'];
+    TASK_INFO = `[수행 과제: ${currentTask.title}]\n🚨[수업 배경]: ${currentTask.background}\n[제시문] ${currentTask.content}\n\n${currentTask.goals.map((g, i) => `과제${i+1}) ${g}`).join('\n')}`;
+
+    // 문제 선택 드롭다운 초기화 및 이벤트 연결
+    const taskSelect = document.getElementById('taskSelect');
+    if (taskSelect) {
+        taskSelect.innerHTML = '';
+        for (const [id, task] of Object.entries(PROBLEM_DB)) {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = task.title;
+            taskSelect.appendChild(opt);
+        }
+        taskSelect.value = currentTaskId;
+        taskSelect.addEventListener('change', (e) => {
+            if (confirm("과제를 변경하면 진행 중인 대화가 모두 초기화되고 새로 시작됩니다. 변경하시겠습니까?")) {
+                localStorage.setItem('selected_task', e.target.value);
+                location.reload();
+            } else {
+                e.target.value = currentTaskId;
+            }
+        });
+    }
+    const taskCardContent = document.getElementById('taskCardContent');
+    if (taskCardContent) taskCardContent.innerHTML = currentTask.uiHtml;
+
+    // 💡 문제 데이터가 준비된 후 교사의 첫 인사 및 과제 제시로 대화 시작
+    startInitialTeacherTurn();
+}
