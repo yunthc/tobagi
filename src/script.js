@@ -36,7 +36,7 @@ const PROBLEM_DB = {
         background: "학생들은 '경우의 수'와 '확률의 기본 개념'은 배웠으나, 각 결과가 일어날 가능성이 다를 때의 확률 계산(수형도 활용 등)은 헷갈려 하는 상태입니다.",
         content: "입구 P에 공을 넣으면 아래로 떨어지며 다음과 같은 경로를 거칩니다.\n1. 첫 번째 갈림길에서 관이 왼쪽과 오른쪽 두 갈래로 나뉩니다.\n2. 왼쪽 관으로 떨어지면 곧바로 위치 A에 도착합니다.\n3. 오른쪽 관으로 떨어지면 아래에서 두 번째 갈림길을 만나 다시 두 갈래로 나뉩니다.\n4. 두 번째 갈림길에서 왼쪽으로 떨어지면 위치 B에, 오른쪽으로 떨어지면 위치 C에 도착합니다.\n(단, 공이 모든 갈림길에서 양쪽 방향으로 떨어질 가능성은 같습니다.)",
         goals: [
-            "위치 A, B, C에 공이 도착할 확률이 모두 같은지 토론하기",
+            "시준이의 말이 맞는지 확인하기",
             "공이 위치 B에 도착할 확률 구하기"
         ],
         teacherHint: "교사가 먼저 'A는 1/2이고 B, C는 1/4이야'라고 정답을 알려주지 말고, 'A로 가는 길과 B, C로 가는 길은 갈림길을 몇 번 거칠까요?'와 같이 수형도를 떠올릴 수 있는 힌트를 통해 스스로 발견하게 유도하세요.",
@@ -83,12 +83,13 @@ const PROBLEM_DB = {
                   <text x="430" y="305" class="label">C</text>
                 </svg>
             </div>
-            <p>- 첫 번째 갈림길: 왼쪽(A 도착), 오른쪽(두 번째 갈림길로)</p>
-            <p>- 두 번째 갈림길: 왼쪽(B 도착), 오른쪽(C 도착)</p>
-            <p><strong>[과제 1]</strong> A, B, C에 도착할 확률이 모두 같은지 토론하기</p>
+            <p> 위 문제 상황에서 시준이는 다음과 같이 생각했습니다. </p>
+            <p> “P에 공을 넣었을 때, 갈라지는 지점에서 공이 양쪽 방향으로 떨어질 가능성이 같다고 한다. 이때 공이 B 위치에 떨어질 확률을 구하시오.”
+시준: 공 A, B, C의 세 위치 중 하나에 떨어질 테니까 B 위치에 떨어질 확률은 1/3이야! </p>
+            <p><strong>[과제 1]</strong> 시준이의 말이 맞는지 확인하기</p>
             <p><strong>[과제 2]</strong> 공이 위치 B에 도착할 확률 구하기</p>
         `,
-        teacherInitialText: "얘들아 안녕! 오늘 우리가 탐구할 확률 문제를 화면에 띄워줄게. 입구 P에 공을 넣으면 갈림길을 거쳐 A, B, C 중 한 곳에 떨어지는 장치란다.<br>우리의 첫 번째 과제는 <b>위치 A, B, C에 공이 도착할 확률이 모두 같은지</b> 토론해 보는 거야. 어떻게 생각하니?"
+        teacherInitialText: "얘들아 안녕! 오늘 우리가 탐구할 확률 문제를 화면에 띄워줄게. 입구 P에 공을 넣으면 갈림길을 거쳐 A, B, C 중 한 곳에 떨어지는 장치란다.<br>우리의 첫 번째 과제는 <b>시준이의 생각이 맞는지</b> 토론해 보는 거야. 시준이가 \"B 위치에 떨어질 확률은 1/3이야!\"라고 했는데, 어떻게 생각하니?"
     },
     "task2": {
         title: "일차방정식의 활용 - 거속시",
@@ -175,6 +176,8 @@ let understandingChart = null;
 
 // 🔥 대화 일시정지/재생 플래그
 let isSimulationStopped = false;
+// 🔥 대화 완전 종료 플래그
+let isSimulationEnded = false;
 
 // 🔥 대화 캐시용 배열 및 캐시 저장 함수
 let chatHistoryForStorage = [];
@@ -187,7 +190,8 @@ function saveSimulationState() {
         scoreHistory,
         turnCount,
         chartLabels,
-        chatHistoryForStorage
+        chatHistoryForStorage,
+        isSimulationEnded
     };
     localStorage.setItem('tobagi_sim_state', JSON.stringify(simState));
 }
@@ -199,7 +203,7 @@ function getSystemPrompt(roleName) {
     
     // 1. 공통 기본 설정 분기 (학생 vs 교사)
     if (roleName === "교사") {
-        prompt = `당신의 이름은 '교사'이며, 중학교 1학년 수학 교사로서 모둠 방 대화에 참여하고 있습니다. 당신은 '대화적 교수법(Dialogic Teaching)'을 실천하는 교사입니다. 학생들(${ACTIVE_STUDENTS.join(", ")})의 대화가 정체되거나, 현재 수행중인 과제를 해결했다고 판단될 때 자연스럽게 개입하세요. 반말이 아닌 친절하고 부드러운 존댓말(예: ~해요, ~할까요?)을 1~2문장으로 짧게 사용하세요.\n\n${TEACHER_PROMPT_BASE}\n\n다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨운영 지침: 당신은 과제 진행자입니다. 과제1부터 과제${currentTask.goals.length}까지 한 번에 하나씩 순차적으로 제시하세요. 학생들이 현재 과제의 핵심 정답을 어느 정도 도출하고 합의했다면, 불필요하게 모든 숫자를 검산시키거나 완벽한 증명을 요구하지 말고 즉시 칭찬하며 다음 과제로 자연스럽게 넘어가세요. 만약 과제${currentTask.goals.length}까지 모두 성공적으로 완료되었다면 반드시 "오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 대화를 마무리하세요. 또한, 교사가 먼저 정답을 알려주지 말고 다음과 같이 유도하세요. ${currentTask.teacherHint}]\n`;
+        prompt = `당신의 이름은 '교사'이며, 중학교 1학년 수학 교사로서 모둠 방 대화에 참여하고 있습니다. 당신은 '대화적 교수법(Dialogic Teaching)'을 실천하는 교사입니다. 학생들(${ACTIVE_STUDENTS.join(", ")})의 대화가 정체되거나, 현재 수행중인 과제를 해결했다고 판단될 때 자연스럽게 개입하세요. 반말이 아닌 친절하고 부드러운 존댓말(예: ~해요, ~할까요?)을 1~2문장으로 짧게 사용하세요.\n\n${TEACHER_PROMPT_BASE}\n\n다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨운영 지침: 당신은 과제 진행자입니다. 과제1부터 과제${currentTask.goals.length}까지 한 번에 하나씩 순차적으로 제시하세요. 학생들이 현재 과제의 핵심 정답을 어느 정도 도출하고 합의했다면, 불필요하게 모든 숫자를 검산시키거나 완벽한 증명을 요구하지 말고 즉시 칭찬하며 다음 과제로 자연스럽게 넘어가세요. 만약 학생들이 제시문의 문제에 대한 충분한 답을 찾았거나, 최종 정답을 올바르게 요약했다면 추가 질문이나 다음 과제 제시 없이 반드시 "정답입니다! 오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 대화를 완전히 마무리하세요. (단, 정답이 나왔더라도 마지막 발화에 오개념이나 잘못된 일반화가 있다면 절대 종료하지 말고 논리를 다시 잡아주세요.) 또한, 교사가 먼저 정답을 알려주지 말고 다음과 같이 유도하세요. ${currentTask.teacherHint}]\n`;
     } else {
         prompt = `당신의 이름은 '${roleName}'이며, 중학교 1학년 학생으로서 수학 모둠 방 대화에 참여하고 있습니다. 완벽한 AI 티를 내지 말고, 무조건 1~2문장의 짧은 구어체 반말(예: ㅋㅋ, 응 맞아, 아 몰라)을 쓰세요. 다음 과제 배경을 참고하세요.\n${TASK_INFO}\n\n[🚨학생 지침: 교사나 시스템이 제시한 '현재 진행 중인 과제'에만 집중하세요. 스포일러는 금지입니다. ★가장 중요한 규칙: 절대 친구의 말을 앵무새처럼 반복하거나 "해보자", "맞아"라고 동의만 하며 턴을 낭비하지 마세요. 발화 시 반드시 본인이 직접 구체적인 숫자를 계산해서 말하거나, 새로운 아이디어를 던져서 대화를 무조건 한 단계 진전시키세요.]\n`;
         if (roleName === "민준") prompt ;
@@ -697,11 +701,30 @@ async function callOllama(roleName) {
     
     let taskPrompt = `위 Context(대화 내역)의 마지막 발화를 꼼꼼히 읽고, 그에 대한 자연스러운 리액션으로 시작하되, 단순한 동의나 반복을 피하고 **반드시 구체적인 수학적 행동(계산 시도, 숫자 언급, 반례 제시 등)을 포함하여** '${roleName}'의 다음 톡을 1~2문장으로 작성해줘. 혼자 과제 진도를 빼거나 뜬금없는 소리를 하지 말고, 직전 대화의 맥락을 이어가며 문제를 해결하세요.`;
 
-    // 💡 강제 오답 발화 로직: 이해도에 반비례하는 확률로 작동
-    if (roleName !== "교사") {
+    // 💡 [추가] 교사가 요약을 요청했는지, 아니면 일반 토론 상황인지에 따라 프롬프트 분기
+    const messages = document.querySelectorAll('.message:not(.typing-indicator)');
+    let isSummarizing = false;
+    if (roleName !== "교사" && messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        const lastSpeakerEl = lastMessage.querySelector('.s-name');
+        const lastSpeaker = lastSpeakerEl ? lastSpeakerEl.innerText : null;
+        
+        const clone = lastMessage.cloneNode(true);
+        const sn = clone.querySelector('.speaker-name');
+        if(sn) sn.remove();
+        const lastMessageText = clone.innerText.trim();
+
+        if (lastSpeaker === "교사" && (lastMessageText.includes("정리") || lastMessageText.includes("설명") || lastMessageText.includes("한 문장으로") || lastMessageText.includes("최종"))) {
+            isSummarizing = true;
+            taskPrompt = `교사가 방금 배운 내용의 핵심을 한 문장으로 정리해달라고 요청했습니다. '${roleName}'로서, 지금까지 토론한 내용을 바탕으로 과제의 최종 정답을 간결하고 명확한 한 문장의 서술문으로 말하세요. 절대 질문하거나 추측하지 말고, 확신에 찬 어조로 정답을 요약해서 말해야 합니다.`;
+            console.log(`📝 [System] '${roleName}' 최종 정리 발화 모드 발동!`);
+        }
+    }
+
+    // 💡 강제 오답 발화 로직: 요약 중이 아닐 때만 이해도에 반비례하는 확률로 작동
+    if (roleName !== "교사" && !isSummarizing) {
         const level = understandingLevels[roleName];
         if (level !== undefined) {
-            // 💡 오답 발동 확률 최대 80%로 제한
             const errorProb = (100 - level) / 150;
             if (Math.random() < errorProb) {
                 taskPrompt += `\n\n[🚨강제 지시: 현재 당신은 잘못된 수학적 개념을 가지고 있습니다. **반드시 구체적이고 치명적인 수학적 오류(잘못된 계산, 오개념, 엉뚱한 규칙 적용 등)를 저지르는 발화를 하십시오.** 절대 정답을 말해서는 안 됩니다!]`;
@@ -715,8 +738,9 @@ async function callOllama(roleName) {
         taskPrompt = `위 Context(대화 내역)에서 직전 3턴의 대화를 면밀히 분석하세요.
 그리고 당신에게 주어진 '대화적 교수법'의 5가지 원칙(집단적, 상호적, 지지적, 누적적, 목적 지향적) 중 현재 상황에서 가장 필요한 1가지 원칙을 결정하세요.
 결정한 1가지 원칙의 전략을 적용하여, 학생들의 사고를 진전시키거나 대화를 조율하는 교사의 다음 톡을 1~2문장으로 작성해줘. 혼자 과제 진도를 빼거나 정답을 바로 알려주지 말고, 직전 대화의 맥락을 이어가며 문제를 해결하도록 유도하세요.
-[🚨출력 규칙] 반드시 아래 형식에 맞춰서 출력하세요. 다른 설명은 추가하지 마세요.
-[선택한 원칙] (집단적, 상호적, 지지적, 누적적, 목적 지향적 중 택1)
+🚨 [특별 지침: 수업 종료]: 만약 직전 대화에서 학생들이 제시문의 문제에 대한 충분한 답을 찾았거나, 최종 정답을 한 문장으로 올바르게 요약했다면 **더 이상 추가 질문이나 토론 유도를 절대 하지 말고** 즉시 "정답입니다! 오늘 모둠 활동은 여기까지 할게요! 모두 수고했어요."라고 말하며 토론을 완전히 종료하세요. (단, 정답이 도출되었더라도 직전 학생의 발화에 엉뚱한 오개념이나 잘못된 일반화가 포함되어 있다면 절대 종료하지 말고, 다시 대화적 원칙을 적용하여 그 오개념을 바로잡는 질문을 던지세요!)
+[🚨출력 규칙] 반드시 아래 형식에 맞춰서 출력하세요. 다른 설명은 추가하지 마세요. (수업을 종료할 때는 [선택한 원칙]에 '수업 종료'라고 적으세요.)
+[선택한 원칙] (집단적, 상호적, 지지적, 누적적, 목적 지향적, 수업 종료 중 택1)
 [발화] (학생들에게 할 실제 대화 내용)`;
     }
 
@@ -808,8 +832,22 @@ async function checkTeacherIntervention() {
     });
 
     // 1.5 💡 교사의 연속 개입 방지: 최근 2턴 이내에 교사 발화가 있다면 LLM 판단 자체를 스킵
-    if (recentSpeakers.slice(-2).includes("교사")) {
-        console.log("💬 [System] 최근 2턴 내 교사 발화가 감지되어 개입 판단을 건너뜁니다.");
+    let skipIntervention = recentSpeakers.slice(-2).includes("교사");
+    
+    // 예외 처리: 직전 화자는 학생이고, 교사의 마지막 발화에 요약/정리 요청이 있었던 경우는 학생의 대답에 대해 교사가 칭찬/종료 개입을 해야 함
+    if (skipIntervention && recentSpeakers[recentSpeakers.length - 1] !== "교사") {
+        const lastTeacherMsg = Array.from(messages).reverse().find(m => {
+            const nameSpan = m.querySelector('.s-name');
+            const speaker = nameSpan ? nameSpan.innerText : (m.querySelector('.speaker-name')?.innerText || "");
+            return speaker.includes("교사");
+        });
+        if (lastTeacherMsg && (lastTeacherMsg.innerText.includes("정리") || lastTeacherMsg.innerText.includes("설명") || lastTeacherMsg.innerText.includes("한 문장으로") || lastTeacherMsg.innerText.includes("최종"))) {
+            skipIntervention = false;
+        }
+    }
+
+    if (skipIntervention) {
+        console.log("💬 [System] 최근 2턴 내 교사 발화가 감지되어 개입 판단을 건너뜁니다 (종료 대기 제외).");
         return false;
     }
 
@@ -833,6 +871,9 @@ ${teacherPersonaPrompt}
 - 학생들이 같은 말을 반복하며 진전이 없거나 (Stagnant)
 - 과제와 전혀 상관없는 딴 이야기를 하고 있다면 (Off-topic)
 - 💡 학생들이 현재 과제의 핵심 정답을 도출해내어 대략적으로 합의했을 때 (불필요한 검산이나 재확인 없이 즉시 개입하여 칭찬하고 다음 과제로 넘어가기 위함)
+- 🚨 [수업 종료 감지] 학생들이 제시문의 문제에 대한 충분한 답을 찾았거나, 최종 정답을 올바르게 요약했을 때 (단, 직전 발화에 오개념이나 잘못된 논리가 남아있다면 종료가 아닌 일반 개입을 위해 YES를 출력하세요.)
+- 기타 대화가 비생산적으로 흐르고 있다고 판단되는 경우
+
 (예: '지시적' 성향이 강하면 더 빠르게 개입, '대화적' 성향이 강하면 더 오래 관망)
 
 🚨 [개입 제한 규칙]
@@ -881,7 +922,10 @@ ${teacherPersonaPrompt}
 // 대화 확률 이벤트 체인 로직
 // 대화 확률 이벤트 체인 로직 (순수 자동 시뮬레이션 모드)
 async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
-    if (isSimulationStopped) return; // 💡 강제 종료 시 즉시 리턴
+    globalChainId++;
+    const myChainId = globalChainId;
+
+    if (isSimulationStopped || myChainId !== globalChainId) return; // 💡 강제 종료 시 즉시 리턴
     
     console.log(`🔄 [Chain] 자동 대화 턴 체인 시작 (직전 발화자: ${lastSpeaker})`);
     
@@ -891,7 +935,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
     let keepGoing = true;
 
     while (keepGoing && chainCount < 100) {
-        if (isSimulationStopped) return;
+        if (isSimulationStopped || myChainId !== globalChainId) return;
 
         keepGoing = false;
 
@@ -930,7 +974,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         // 1. 민준 (발화 당첨 시)
         if (currentSpeaker !== "민준" && Math.random() <= probMinjun) {
             await sleep(getSleepTime()); // 💡 Gemini API 429 방지 및 인간미 있는 대화 딜레이
-            if (isSimulationStopped) return;
+            if (isSimulationStopped || myChainId !== globalChainId) return;
 
             console.log(`🎲 [Chain] '민준' 발화 당첨!`);
             
@@ -953,6 +997,8 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
                 
                 if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
                     console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
+                    isSimulationEnded = true;
+                    saveSimulationState();
                     return; // 완전 종료
                 }
 
@@ -966,7 +1012,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         // 2. 서연 (발화 당첨 시)
         if (currentSpeaker !== "서연" && Math.random() <= probSeoyeon) {
             await sleep(getSleepTime());
-            if (isSimulationStopped) return;
+            if (isSimulationStopped || myChainId !== globalChainId) return;
 
             console.log(`🎲 [Chain] '서연' 발화 당첨!`);
             
@@ -988,6 +1034,8 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
                 
                 if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
                     console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
+                    isSimulationEnded = true;
+                    saveSimulationState();
                     return; // 완전 종료
                 }
 
@@ -1000,7 +1048,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         // 3. 연우 (발화 당첨 시)
         if (currentSpeaker !== "연우" && Math.random() <= probYeonwoo) {
             await sleep(getSleepTime());
-            if (isSimulationStopped) return;
+            if (isSimulationStopped || myChainId !== globalChainId) return;
 
             console.log(`🎲 [Chain] '연우' 발화 당첨!`);
             
@@ -1022,6 +1070,8 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
                 
                 if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
                     console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
+                    isSimulationEnded = true;
+                    saveSimulationState();
                     return; // 완전 종료
                 }
 
@@ -1037,13 +1087,15 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
     
     if (currentSpeaker !== "교사") {
         await sleep(getSleepTime());
-        if (isSimulationStopped) return;
+        if (isSimulationStopped || myChainId !== globalChainId) return;
         console.log(`👨‍🏫 [System] 대화 흐름 정체 감지, '교사' 강제 개입!`);
         const tRes = await callOllama("교사");
         appendMessage("교사", tRes.reply, false, false, tRes.principle);
         
         if (tRes.reply.includes("여기까지 할게요") && tRes.reply.includes("수고했어요")) {
             console.log("🛑 [System] 모든 과제 완료. 시뮬레이션 종료.");
+            isSimulationEnded = true;
+            saveSimulationState();
             return; // 완전 종료
         }
         
@@ -1051,7 +1103,7 @@ async function runAiTurnChain(lastSpeaker, lastMessageText = "") {
         await runAiTurnChain("교사", tRes.reply);
     } else {
         await sleep(getSleepTime());
-        if (isSimulationStopped) return;
+        if (isSimulationStopped || myChainId !== globalChainId) return;
         const backupStudent = ACTIVE_STUDENTS.includes("서연") ? "서연" : ACTIVE_STUDENTS[0];
         console.log(`👩 [System] 교사 발화 후 정체, '${backupStudent}'이(가) 총대 메고 답변 강제!`);
         const res = await callOllama(backupStudent);
@@ -1246,19 +1298,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 💡 대화 일시정지/재생 버튼 로직
     const stopSimBtn = document.getElementById('stopSimBtn');
+    const pauseOverlay = document.getElementById('pauseOverlay');
     if (stopSimBtn) {
         stopSimBtn.addEventListener('click', () => {
             if (!isSimulationStopped) {
                 isSimulationStopped = true;
                 stopSimBtn.innerHTML = '▶️';
                 stopSimBtn.title = '대화 재개';
-                appendMessage("시스템", "⏸️ 대화가 일시 정지되었습니다. 다시 재생하려면 버튼을 누르세요.", false);
+                if (pauseOverlay) pauseOverlay.style.display = 'flex';
             } else {
                 isSimulationStopped = false;
                 stopSimBtn.innerHTML = '⏸️';
                 stopSimBtn.title = '대화 일시정지';
-                appendMessage("시스템", "▶️ 대화를 재개합니다...", false);
+                if (pauseOverlay) pauseOverlay.style.display = 'none';
                 
+                if (isSimulationEnded) return; // 이미 대화가 끝났으면 재개하지 않음
+
                 let lastSpeaker = "교사";
                 let lastText = "";
                 if (chatHistoryForStorage.length > 0) {
@@ -1331,6 +1386,7 @@ async function loadProblemsAndInit() {
             turnCount = savedState.turnCount || turnCount;
             chartLabels = savedState.chartLabels || chartLabels;
             chatHistoryForStorage = savedState.chatHistoryForStorage || [];
+            isSimulationEnded = savedState.isSimulationEnded || false;
 
             const chatBox = document.getElementById('chatBox');
             if (chatBox) chatBox.innerHTML = ''; 
@@ -1343,10 +1399,12 @@ async function loadProblemsAndInit() {
             updateChartData();
             console.log("💾 [System] 이전 대화 캐시 복원 완료");
             
-            if (chatHistoryForStorage.length > 0) {
+            if (chatHistoryForStorage.length > 0 && !isSimulationEnded) {
                 const lastMsg = chatHistoryForStorage[chatHistoryForStorage.length - 1];
                 console.log(`🔄 [System] 캐시 복원 후 '${lastMsg.sender}' 턴부터 대화 체인 재가동...`);
                 setTimeout(() => runAiTurnChain(lastMsg.sender, lastMsg.text), 4000);
+            } else if (isSimulationEnded) {
+                console.log("🛑 [System] 이전 대화가 이미 완료되어 대화를 재개하지 않습니다.");
             }
             return; // 기존 저장된 상태가 있다면 초기 발화 스킵
         } catch (e) {

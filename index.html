@@ -108,10 +108,17 @@
                 <button id="saveDbBtn" class="btn-save-db">💾 결과 DB 저장</button>
             </div>
         </div>
-        <div class="chat-box" id="chatBox">
-            <div class="message msg-ai">
-                <div class="speaker-name"><span class="s-name">시스템</span></div>
-                안녕하세요! 오늘 과제는 '확률의 계산'입니다. 다들 자유롭게 의견을 나누며 과제를 해결해 보세요. 사용자가 먼저 말을 걸어 모둠 활동을 시작해 주세요!
+        
+        <div style="position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0;">
+            <div id="pauseOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; flex-direction: column; color: white;">
+                <h2 style="margin: 0; margin-bottom: 10px;">⏸️ 일시정지 중</h2>
+                <p style="margin: 0; font-size: 0.9rem;">상단의 재생 버튼(▶️)을 눌러 대화를 재개하세요.</p>
+            </div>
+            <div class="chat-box" id="chatBox" style="flex: 1; overflow-y: auto;">
+                <div class="message msg-ai">
+                    <div class="speaker-name"><span class="s-name">시스템</span></div>
+                    안녕하세요! 오늘 과제는 '확률의 계산'입니다. 다들 자유롭게 의견을 나누며 과제를 해결해 보세요. 사용자가 먼저 말을 걸어 모둠 활동을 시작해 주세요!
+                </div>
             </div>
         </div>
         <div class="input-area">
