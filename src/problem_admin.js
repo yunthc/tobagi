@@ -22,6 +22,10 @@ document.getElementById('saveProblemBtn').addEventListener('click', async () => 
     const goal2 = document.getElementById('p_goal2').value.trim();
     const teacherHint = document.getElementById('p_teacherHint').value.trim();
     const teacherInit = document.getElementById('p_teacherInit').value.trim();
+    
+    // 정답 입력 필드가 있으면 값을 가져오고, 없으면 빈 문자열로 처리
+    const correctAnswerEl = document.getElementById('p_correctAnswer');
+    const correctAnswer = correctAnswerEl ? correctAnswerEl.value.trim() : "정답 정보 없음";
 
     if (!p_id || !title || !background || !content || !goal1 || !teacherHint || !teacherInit) {
         alert("필수 항목을 모두 입력해주세요!");
@@ -43,6 +47,7 @@ document.getElementById('saveProblemBtn').addEventListener('click', async () => 
         goals: goals,
         teacherHint: teacherHint,
         teacherInitialText: teacherInit,
+        correctAnswer: correctAnswer,
         uiHtml: uiHtml
     };
 
